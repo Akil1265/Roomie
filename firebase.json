@@ -1,0 +1,28 @@
+{
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "roomie-cfc03",
+                    "appId": "1:1066645245892:android:47bb217ca82ac28fe81e91",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "roomie-cfc03",
+                    "configurations": {
+                        "web": "1:1066645245892:web:7782da71e8896be4e81e91"
+                    }
+                }
+            }
+        }
+    },
+    "firestore": {
+        "rules": "firestore.rules",
+        "indexes": "firestore.indexes.json"
+    },
+    "storage": {
+        "rules": "storage.rules"
+    }
+}

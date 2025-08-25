@@ -1,0 +1,18 @@
+rules_version = '2';
+
+// Craft rules based on data in your Firestore database
+// allow write: if firestore.get(
+//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Images: Anyone can view, only users can upload
+    match /profile_images/{imageId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Default rule for other files
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
