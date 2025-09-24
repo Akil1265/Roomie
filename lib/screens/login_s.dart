@@ -45,9 +45,9 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     );
   }
 
-  Future<void> _googleLogin() async {
+  Future<void> _googleSignIn() async {
     setState(() => _loading = true);
-    final authService = AuthService(); // Instantiate AuthService
+    final authService = AuthService();
 
     try {
       print('🔄 Login: Starting Google Sign-In process...');
@@ -58,31 +58,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
 
       switch (result.status) {
         case GoogleSignInStatus.success:
-          final user = result.user;
-          if (user == null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Authentication error: No user returned'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
-          final userDetails = await FirestoreService().getUserDetails(user.uid);
-          if (!mounted) return;
-          
-          if (userDetails == null ||
-              userDetails['username'] == null ||
-              userDetails['username'].toString().isEmpty) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const UserDetailsScreen(isFromPhoneSignup: false),
-              ),
-            );
-          } else {
-            Navigator.pushNamedAndRemoveUntil(context, '/home', (r) => false);
-          }
+          await _handleGoogleAuthSuccess(result.user, isSignUp: false);
           break;
         case GoogleSignInStatus.cancelled:
         case GoogleSignInStatus.popupClosed:
@@ -115,6 +91,93 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  Future<void> _googleSignUp() async {
+    setState(() => _loading = true);
+    final authService = AuthService();
+
+    try {
+      print('🔄 Login: Starting Google Sign-Up process...');
+      final result = await authService.signInWithGoogle();
+      setState(() => _loading = false);
+
+      if (!mounted) return;
+
+      switch (result.status) {
+        case GoogleSignInStatus.success:
+          await _handleGoogleAuthSuccess(result.user, isSignUp: true);
+          break;
+        case GoogleSignInStatus.cancelled:
+        case GoogleSignInStatus.popupClosed:
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Sign-Up cancelled.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          break;
+        case GoogleSignInStatus.error:
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(result.message ?? 'Google Sign-Up failed.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          break;
+      }
+    } catch (e) {
+      setState(() => _loading = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sign-up error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleGoogleAuthSuccess(user, {required bool isSignUp}) async {
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Authentication error: No user returned'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final userDetails = await FirestoreService().getUserDetails(user.uid);
+    if (!mounted) return;
+
+    if (userDetails == null ||
+        userDetails['username'] == null ||
+        userDetails['username'].toString().isEmpty) {
+      // New user or incomplete profile - go to user details
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => UserDetailsScreen(isFromPhoneSignup: isSignUp),
+        ),
+      );
+    } else {
+      // Existing user with complete profile - go to home
+      if (isSignUp) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Welcome back! You already have an account.'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (r) => false);
     }
   }
 
@@ -248,7 +311,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                           vertical: 0,
                         ),
                         child: Text(
-                          'Or',
+                          'Or continue with Google',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Color(0xFF5C728A),
@@ -257,16 +320,17 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                           ),
                         ),
                       ),
+                      // Google Sign-Up Button
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
-                          vertical: 12,
+                          vertical: 6,
                         ),
                         child: SizedBox(
                           width: double.infinity,
                           height: 48,
                           child: ElevatedButton.icon(
-                            onPressed: _loading ? null : _googleLogin,
+                            onPressed: _loading ? null : _googleSignUp,
                             icon: const Icon(
                               Icons.g_mobiledata,
                               color: Color(0xFF101418),
@@ -283,6 +347,46 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFEAEDF1),
                               foregroundColor: const Color(0xFF101418),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(32),
+                              ),
+                              elevation: 0,
+                              padding: const EdgeInsets.only(left: 0),
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Google Sign-In Button
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: OutlinedButton.icon(
+                            onPressed: _loading ? null : _googleSignIn,
+                            icon: const Icon(
+                              Icons.g_mobiledata,
+                              color: Color(0xFF4285F4),
+                              size: 28,
+                            ),
+                            label: const Text(
+                              'Sign in with Google',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                letterSpacing: 0.015,
+                                color: Color(0xFF4285F4),
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              side: const BorderSide(
+                                color: Color(0xFF4285F4),
+                                width: 1.5,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(32),
                               ),

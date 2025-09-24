@@ -53,7 +53,6 @@ class FirestoreService {
     required String email,
     required String phone,
     dynamic profileImage, // Can be File, XFile, or null
-    String? location,
     String? occupation,
     int? age,
   }) async {
@@ -99,7 +98,6 @@ class FirestoreService {
       'email': email,
       'phone': phone,
       'profileImageUrl': profileImageUrl, // Always include this field
-      if (location != null) 'location': location,
       if (occupation != null) 'occupation': occupation,
       if (age != null) 'age': age,
       'updatedAt': FieldValue.serverTimestamp(),

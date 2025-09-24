@@ -74,6 +74,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
   final ImagePicker _picker = ImagePicker();
   File? _selectedImage;
   String? _webImagePath;
+  XFile? _webImageFile; // Store the XFile for web uploads
   bool _isLoading = false;
   final GroupsService _groupsService = GroupsService();
 
@@ -90,10 +91,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
         setState(() {
           if (kIsWeb) {
             _webImagePath = image.path;
+            _webImageFile = image;
             _selectedImage = null;
           } else {
             _selectedImage = File(image.path);
             _webImagePath = null;
+            _webImageFile = null;
           }
         });
         print('Image selected: ${image.path}');
@@ -142,6 +145,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
         maxMembers: maxMembers,
         rent: double.tryParse(_rentController.text.trim()),
         imageFile: _selectedImage,
+        webPicked: _webImageFile,
       );
 
       if (groupId != null) {

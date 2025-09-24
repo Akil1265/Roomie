@@ -15,7 +15,6 @@ class UserDetailsScreen extends StatefulWidget {
 class _UserDetailsScreenState extends State<UserDetailsScreen> {
   final _usernameController = TextEditingController();
   final _bioController = TextEditingController();
-  final _locationController = TextEditingController();
   final _occupationController = TextEditingController();
   final _ageController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -39,10 +38,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             email: user.email ?? '',
             phone: '',
             profileImage: _profileImageFile, // Use the selected image file
-            location:
-                _locationController.text.trim().isEmpty
-                    ? null
-                    : _locationController.text.trim(),
             occupation:
                 _occupationController.text.trim().isEmpty
                     ? null
@@ -267,38 +262,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                               }
                               return null;
                             },
-                          ),
-                        ),
-
-                        // Location field
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 6,
-                          ),
-                          child: TextFormField(
-                            controller: _locationController,
-                            decoration: InputDecoration(
-                              hintText: 'Location',
-                              filled: true,
-                              fillColor: Color(0xFFEAEDF1),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(
-                                  color: Color(0xFFDCE7F3),
-                                  width: 2,
-                                ),
-                              ),
-                              hintStyle: TextStyle(color: Color(0xFF5C728A)),
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 18,
-                              ),
-                            ),
                           ),
                         ),
 

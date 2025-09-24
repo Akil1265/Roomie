@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:roomie/screens/login_s.dart';
 import 'package:roomie/screens/home_s.dart';
+import 'package:roomie/screens/login_s.dart';
+import 'package:roomie/services/auth_service.dart';
 import 'package:roomie/services/firestore_service.dart';
 import 'package:roomie/screens/user_details_s.dart';
 
@@ -11,9 +12,9 @@ class AuthWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
+      stream: AuthService().authStateChanges,
       builder: (context, snapshot) {
-        // Show loading while checking auth state
+        // Show a loading indicator while waiting for the auth state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             backgroundColor: Colors.white,

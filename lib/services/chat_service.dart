@@ -193,6 +193,157 @@ class ChatService {
     }
   }
 
+  /// Create or get a group chat
+  Future<String> createOrGetGroupChat({
+    required String groupId,
+    required String groupName,
+    required List<String> memberIds,
+    required Map<String, String> memberNames,
+  }) async {
+    try {
+      final currentUser = _authService.currentUser;
+      if (currentUser == null) throw Exception('User not authenticated');
+
+      final chatRef = _database.ref('groupChats/$groupId');
+      final chatSnapshot = await chatRef.get();
+
+      if (!chatSnapshot.exists) {
+        // Create new group chat
+        final chatData = {
+          'id': groupId,
+          'groupName': groupName,
+          'members': memberIds,
+          'memberNames': memberNames,
+          'createdAt': DateTime.now().millisecondsSinceEpoch,
+          'lastMessage': 'Group created',
+          'lastSenderId': 'system',
+          'lastMessageTime': DateTime.now().millisecondsSinceEpoch,
+          'unreadCounts': {for (String memberId in memberIds) memberId: 0},
+        };
+
+        await chatRef.set(chatData);
+        debugPrint('Created new group chat: $groupId');
+
+        // Send welcome message
+        await sendGroupMessage(
+          groupId: groupId,
+          message: 'Welcome to $groupName! 🎉',
+          isSystemMessage: true,
+        );
+      }
+
+      return groupId;
+    } catch (e) {
+      debugPrint('Error creating/getting group chat: $e');
+      rethrow;
+    }
+  }
+
+  /// Send a message to group chat
+  Future<void> sendGroupMessage({
+    required String groupId,
+    required String message,
+    bool isSystemMessage = false,
+    MessageType type = MessageType.text,
+  }) async {
+    try {
+      final currentUser = _authService.currentUser;
+      if (currentUser == null && !isSystemMessage) {
+        throw Exception('User not authenticated');
+      }
+
+      final messageId = _database.ref('groupChats/$groupId/messages').push().key!;
+      final messageData = {
+        'id': messageId,
+        'senderId': isSystemMessage ? 'system' : currentUser!.uid,
+        'senderName': isSystemMessage ? 'System' : (currentUser?.displayName ?? currentUser?.email ?? 'Unknown'),
+        'senderImageUrl': isSystemMessage ? null : currentUser?.photoURL,
+        'message': message,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'type': type.toString().split('.').last,
+        'isSystemMessage': isSystemMessage,
+      };
+
+      // Add message to messages in Realtime Database
+      final messageRef = _database.ref('groupChats/$groupId/messages/$messageId');
+      await messageRef.set(messageData);
+
+      if (!isSystemMessage) {
+        // Update group chat's last message and unread counts
+        final chatRef = _database.ref('groupChats/$groupId');
+        final chatSnapshot = await chatRef.get();
+        
+        if (chatSnapshot.exists) {
+          final chatData = Map<String, dynamic>.from(chatSnapshot.value as Map);
+          final members = List<String>.from(chatData['members'] ?? []);
+          final updatedUnreadCounts = Map<String, int>.from(
+            Map<String, dynamic>.from(chatData['unreadCounts'] ?? {})
+                .cast<String, int>()
+          );
+
+          // Increment unread count for all members except sender
+          for (String memberId in members) {
+            if (memberId != currentUser!.uid) {
+              updatedUnreadCounts[memberId] = 
+                  (updatedUnreadCounts[memberId] ?? 0) + 1;
+            }
+          }
+
+          await chatRef.update({
+            'lastMessage': message,
+            'lastSenderId': currentUser!.uid,
+            'lastMessageTime': DateTime.now().millisecondsSinceEpoch,
+            'unreadCounts': updatedUnreadCounts,
+          });
+        }
+      }
+
+      debugPrint('Group message sent successfully: $messageId');
+    } catch (e) {
+      debugPrint('Error sending group message: $e');
+      rethrow;
+    }
+  }
+
+  /// Get group messages stream
+  Stream<List<Map<String, dynamic>>> getGroupMessagesStream(String groupId) {
+    return _database.ref('groupChats/$groupId/messages')
+        .orderByChild('timestamp')
+        .onValue
+        .map((event) {
+      final data = event.snapshot.value;
+      if (data == null) return <Map<String, dynamic>>[];
+
+      final messagesMap = Map<String, dynamic>.from(data as Map);
+      final messages = messagesMap.entries.map((entry) {
+        final messageData = Map<String, dynamic>.from(entry.value as Map);
+        messageData['id'] = entry.key;
+        return messageData;
+      }).toList();
+
+      // Sort by timestamp ascending (oldest first for chat display)
+      messages.sort((a, b) => (a['timestamp'] as int).compareTo(b['timestamp'] as int));
+      return messages;
+    });
+  }
+
+  /// Mark group messages as read
+  Future<void> markGroupMessagesAsRead(String groupId) async {
+    try {
+      final currentUser = _authService.currentUser;
+      if (currentUser == null) return;
+
+      final chatRef = _database.ref('groupChats/$groupId');
+      await chatRef.update({
+        'unreadCounts/${currentUser.uid}': 0,
+      });
+
+      debugPrint('Group messages marked as read for chat: $groupId');
+    } catch (e) {
+      debugPrint('Error marking group messages as read: $e');
+    }
+  }
+
   /// Search for users to start a chat with
   Future<List<Map<String, dynamic>>> searchUsers(String query) async {
     try {

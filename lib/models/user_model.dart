@@ -6,7 +6,6 @@ class UserModel {
   final String? phone;
   final String? bio;
   final String? profileImageUrl;
-  final String? location;
   final String? occupation;
   final int? age;
   final DateTime? createdAt;
@@ -20,7 +19,6 @@ class UserModel {
     this.phone,
     this.bio,
     this.profileImageUrl,
-    this.location,
     this.occupation,
     this.age,
     this.createdAt,
@@ -36,7 +34,6 @@ class UserModel {
       phone: map['phone'],
       bio: map['bio'],
       profileImageUrl: map['profileImageUrl'],
-      location: map['location'],
       occupation: map['occupation'],
       age: map['age'],
       createdAt: map['createdAt']?.toDate(),
@@ -52,7 +49,6 @@ class UserModel {
       'phone': phone,
       'bio': bio,
       'profileImageUrl': profileImageUrl,
-      'location': location,
       'occupation': occupation,
       'age': age,
       'createdAt': createdAt,
@@ -79,7 +75,6 @@ class UserModel {
     String? phone,
     String? bio,
     String? profileImageUrl,
-    String? location,
     String? occupation,
     int? age,
     DateTime? createdAt,
@@ -93,7 +88,6 @@ class UserModel {
       phone: phone ?? this.phone,
       bio: bio ?? this.bio,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
-      location: location ?? this.location,
       occupation: occupation ?? this.occupation,
       age: age ?? this.age,
       createdAt: createdAt ?? this.createdAt,
