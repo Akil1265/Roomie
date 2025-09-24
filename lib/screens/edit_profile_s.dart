@@ -28,7 +28,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _bioController;
   late TextEditingController _phoneController;
-  late TextEditingController _locationController;
   late TextEditingController _occupationController;
   late TextEditingController _ageController;
 
@@ -51,9 +50,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _phoneController = TextEditingController(
       text: widget.currentUser.phone ?? '',
     );
-    _locationController = TextEditingController(
-      text: widget.currentUser.location ?? '',
-    );
     _occupationController = TextEditingController(
       text: widget.currentUser.occupation ?? '',
     );
@@ -69,7 +65,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _nameController.dispose();
     _bioController.dispose();
     _phoneController.dispose();
-    _locationController.dispose();
     _occupationController.dispose();
     _ageController.dispose();
     super.dispose();
@@ -154,10 +149,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 _nameController.text.trim().isEmpty
                     ? null
                     : _nameController.text.trim(),
-            'location':
-                _locationController.text.trim().isEmpty
-                    ? null
-                    : _locationController.text.trim(),
             'occupation':
                 _occupationController.text.trim().isEmpty
                     ? null
@@ -347,14 +338,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 label: 'Phone',
                 hint: 'Enter your phone number',
                 keyboardType: TextInputType.phone,
-              ),
-
-              const SizedBox(height: 16),
-
-              _buildTextField(
-                controller: _locationController,
-                label: 'Location',
-                hint: 'Enter your location',
               ),
 
               const SizedBox(height: 16),

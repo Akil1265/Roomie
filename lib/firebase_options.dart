@@ -38,6 +38,7 @@ class DefaultFirebaseOptions {
     appId: '1:1066645245892:android:47bb217ca82ac28fe81e91',
     messagingSenderId: '1066645245892',
     projectId: 'roomie-cfc03',
+    databaseURL: 'https://roomie-cfc03-default-rtdb.firebaseio.com/',
     storageBucket: 'roomie-cfc03.firebasestorage.app',
   );
 
@@ -46,6 +47,7 @@ class DefaultFirebaseOptions {
     appId: '1:1066645245892:ios:88bb9882215359dde81e91',
     messagingSenderId: '1066645245892',
     projectId: 'roomie-cfc03',
+    databaseURL: 'https://roomie-cfc03-default-rtdb.firebaseio.com/',
     storageBucket: 'roomie-cfc03.firebasestorage.app',
     androidClientId: '1066645245892-uj54e0j951ah54a8msqr05h34seoetkc.apps.googleusercontent.com',
     iosClientId: '1066645245892-ifm2s1tj55tigfdndb1n4tr2ua2qj6eo.apps.googleusercontent.com',
@@ -58,6 +60,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1066645245892',
     projectId: 'roomie-cfc03',
     authDomain: 'roomie-cfc03.firebaseapp.com',
+    databaseURL: 'https://roomie-cfc03-default-rtdb.firebaseio.com/',
     storageBucket: 'roomie-cfc03.firebasestorage.app',
     measurementId: 'G-CLXKM3E66E',
   );

@@ -269,14 +269,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       value: _currentUser!.phone!,
                     ),
                   ],
-                  if (_currentUser!.location != null) ...[
-                    const SizedBox(height: 16),
-                    _buildInfoCard(
-                      icon: Icons.location_on_outlined,
-                      title: 'Location',
-                      value: _currentUser!.location!,
-                    ),
-                  ],
                   if (_currentUser!.occupation != null) ...[
                     const SizedBox(height: 16),
                     _buildInfoCard(
