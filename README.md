@@ -76,4 +76,3 @@ flutter run --dart-define=CLOUDINARY_CLOUD_NAME=cloud-roomie --dart-define=CLOUD
 
 ## Security Note
 Never embed API secret in the client. For advanced transformations that require signing, introduce a lightweight backend (Cloud Functions / server) to generate signed parameters.
-
