@@ -70,4 +70,34 @@ class UserModel {
     if (bio != null && bio!.isNotEmpty) return bio!;
     return 'No bio available';
   }
+
+  UserModel copyWith({
+    String? uid,
+    String? email,
+    String? name,
+    String? username,
+    String? phone,
+    String? bio,
+    String? profileImageUrl,
+    String? location,
+    String? occupation,
+    int? age,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return UserModel(
+      uid: uid ?? this.uid,
+      email: email ?? this.email,
+      name: name ?? this.name,
+      username: username ?? this.username,
+      phone: phone ?? this.phone,
+      bio: bio ?? this.bio,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      location: location ?? this.location,
+      occupation: occupation ?? this.occupation,
+      age: age ?? this.age,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

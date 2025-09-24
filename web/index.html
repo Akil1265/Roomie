@@ -20,6 +20,8 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
   <meta name="google-signin-client_id" content="1066645245892-jl9q6rnv07bp58vsgun50fb096rsehn3.apps.googleusercontent.com">
+  <!-- Optional: Google Identity Services script. Needed only if you implement One Tap or renderButton manually. -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -31,6 +33,8 @@
 
   <title>roomie</title>
   <link rel="manifest" href="manifest.json">
+  <!-- Placeholder container if you choose to mount a raw Google button (not required for plugin popup flow) -->
+  <div id="gsi-button-root" style="display:none;"></div>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

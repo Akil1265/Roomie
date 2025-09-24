@@ -2,71 +2,88 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart' show kIsWeb; // Added for web clientId logic
+
+enum GoogleSignInStatus { success, cancelled, popupClosed, error }
+
+class GoogleSignInResult {
+  final GoogleSignInStatus status;
+  final User? user;
+  final String? message;
+  const GoogleSignInResult(this.status, {this.user, this.message});
+
+  bool get isSuccess => status == GoogleSignInStatus.success;
+}
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool _signingIn = false; // prevent concurrent
 
-  // 🔑 Google Sign-In instance
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email'],
-    // Ensure we're requesting the right scope
+    clientId: kIsWeb
+        ? '1066645245892-jl9q6rnv07bp58vsgun50fb096rsehn3.apps.googleusercontent.com'
+        : null,
+    scopes: const ['email'],
   );
 
-  /// ✅ Google Sign-In (Login or Sign Up)
-  Future<bool> signInWithGoogle() async {
+  Future<GoogleSignInResult> signInWithGoogle() async {
+    if (_signingIn) {
+      return const GoogleSignInResult(
+        GoogleSignInStatus.error,
+        message: 'Sign-In already in progress',
+      );
+    }
+    _signingIn = true;
     try {
-      print('🔄 Starting Google Sign-In...');
-
-      // Force sign out first to ensure clean state
-      await _googleSignIn.signOut();
-      print('🔄 Cleared previous Google Sign-In state');
-
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      print('📱 Google Sign-In dialog result: ${googleUser?.email ?? "null"}');
-
+      GoogleSignInAccount? googleUser = await _googleSignIn.signInSilently();
+      googleUser ??= await _googleSignIn.signIn();
       if (googleUser == null) {
-        print('❌ Google Sign-In cancelled by user');
-        return false;
+        return const GoogleSignInResult(GoogleSignInStatus.cancelled);
       }
 
-      print('🔑 Getting authentication credentials...');
-      final googleAuth = await googleUser.authentication;
+      final googleAuth = await googleUser.authentication; // API still asynchronous in 7.x
+      final idToken = googleAuth.idToken;
+      final accessToken = googleAuth.accessToken; // may be null on web
 
-      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
-        print('❌ Failed to get authentication tokens');
-        return false;
+      if (idToken == null) {
+        return const GoogleSignInResult(
+          GoogleSignInStatus.error,
+          message: 'Missing idToken from Google',
+        );
       }
 
-      print('🔑 Creating Firebase credential...');
       final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+        idToken: idToken,
+        accessToken: accessToken,
       );
 
-      print('🔥 Signing in with Firebase...');
       final userCred = await _auth.signInWithCredential(credential);
-
-      if (userCred.user == null) {
-        print('❌ Firebase authentication failed - no user returned');
-        return false;
+      final user = userCred.user;
+      if (user == null) {
+        return const GoogleSignInResult(
+          GoogleSignInStatus.error,
+          message: 'Firebase user null after credential sign-in',
+        );
       }
-
-      print('💾 Saving user details to Firestore...');
       await FirestoreService().saveUserDetails(
-        userCred.user!.uid,
-        userCred.user!.email ?? '',
+        user.uid,
+        user.email ?? '',
       );
-
-      print('✅ Google Sign-In completed successfully');
-      return true;
+      return GoogleSignInResult(GoogleSignInStatus.success, user: user);
     } catch (e) {
-      print('❌ Google Sign-In Error: $e');
-      print('❌ Error type: ${e.runtimeType}');
-      if (e is FirebaseAuthException) {
-        print('❌ Firebase Auth Error Code: ${e.code}');
-        print('❌ Firebase Auth Error Message: ${e.message}');
+      final msg = e.toString();
+      if (msg.contains('popup_closed')) {
+        return const GoogleSignInResult(GoogleSignInStatus.popupClosed);
       }
-      return false;
+      if (msg.contains('User closed the popup')) {
+        return const GoogleSignInResult(GoogleSignInStatus.cancelled);
+      }
+      return GoogleSignInResult(
+        GoogleSignInStatus.error,
+        message: msg,
+      );
+    } finally {
+      _signingIn = false;
     }
   }
 
@@ -156,12 +173,11 @@ class AuthService {
   /// ❓ Check if phone number exists in Firestore
   Future<bool> doesPhoneExist(String phoneNumber) async {
     try {
-      final query =
-          await FirebaseFirestore.instance
-              .collection('users')
-              .where('phone', isEqualTo: phoneNumber)
-              .limit(1)
-              .get();
+      final query = await FirebaseFirestore.instance
+          .collection('users')
+          .where('phone', isEqualTo: phoneNumber)
+          .limit(1)
+          .get();
 
       return query.docs.isNotEmpty;
     } catch (e) {
@@ -179,9 +195,7 @@ class AuthService {
   /// 👤 Current User
   User? get currentUser {
     final user = _auth.currentUser;
-    print(
-      'Auth: Current user: ${user?.uid} - ${user?.email} - ${user?.displayName}',
-    ); // Debug log
+    print('Auth: Current user: ${user?.uid} - ${user?.email} - ${user?.displayName}'); // Debug log
     return user;
   }
 }

@@ -4,7 +4,7 @@ import 'package:roomie/services/auth_service.dart';
 import 'package:roomie/services/profile_image_notifier.dart';
 import 'package:roomie/models/user_model.dart';
 import 'package:roomie/screens/edit_profile_s.dart';
-import 'package:roomie/widgets/mongodb_profile_image.dart';
+import 'package:roomie/widgets/profile_image_widget.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -19,7 +19,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   final ProfileImageNotifier _profileImageNotifier = ProfileImageNotifier();
   UserModel? _currentUser;
   bool _isLoading = true;
-  final GlobalKey<MongoDBProfileImageState> _profileImageKey = GlobalKey();
+  // Legacy Mongo widget removed; key no longer required.
 
   @override
   void initState() {
@@ -63,6 +63,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             );
             _isLoading = false;
           });
+          // Also seed notifier with Google photoURL if present
+          if (user.photoURL != null) {
+            _profileImageNotifier.updateProfileImage(user.photoURL!);
+          }
         }
       } else {
         print('Profile: No authenticated user found'); // Debug log
@@ -184,14 +188,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 );
 
                 // Reload user data if profile was updated
-                if (result == true) {
-                  print('Profile was updated, reloading data...'); // Debug log
-                  // Refresh the profile image immediately without delay
-                  _profileImageKey.currentState?.refresh();
-                  // Load user data to get updated profile info
-                  await Future.delayed(
-                    const Duration(milliseconds: 500),
-                  ); // Wait a bit longer for DB sync
+                if (result is Map) {
+                  // Optimistic update if we received new URL back
+                  final newUrl = result['profileImageUrl'] as String?;
+                  if (newUrl != null && newUrl.isNotEmpty) {
+                    print('Optimistically updating profile image to $newUrl');
+                    _profileImageNotifier.updateProfileImage(newUrl);
+                    setState(() {
+                      _currentUser = _currentUser!.copyWith(profileImageUrl: newUrl);
+                    });
+                  }
+                  _loadUserData(); // still refetch to ensure consistency
+                } else if (result == true) {
+                  // Backward compatibility if we just returned true
                   _loadUserData();
                 }
               }
@@ -206,9 +215,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
             // Profile Picture Section
             Center(
-              child: MongoDBProfileImage(
-                key: _profileImageKey,
-                imageId: _currentUser!.profileImageUrl,
+              child: ProfileImageWidget(
+                // Prefer model URL; if null fallback to global notifier current value
+                imageUrl: _currentUser!.profileImageUrl ?? _profileImageNotifier.currentImageId,
                 radius: 60,
                 placeholder: const Icon(
                   Icons.person,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:roomie/services/mongo_groups_service.dart';
+import 'package:roomie/services/groups_service.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 
@@ -75,7 +75,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
   File? _selectedImage;
   String? _webImagePath;
   bool _isLoading = false;
-  final MongoGroupsService _groupsService = MongoGroupsService();
+  final GroupsService _groupsService = GroupsService();
 
   Future<void> _pickImage() async {
     try {
@@ -145,7 +145,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       );
 
       if (groupId != null) {
-        print('Group created successfully in MongoDB with ID: $groupId');
+  print('Group created successfully with ID: $groupId');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -266,7 +266,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Upload Cover Image Section
-                    Container(
+                    SizedBox(
                       width: double.infinity,
                       height: 200,
                       child: CustomPaint(
@@ -325,8 +325,8 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                                             child: Container(
                                               padding: const EdgeInsets.all(8),
                                               decoration: BoxDecoration(
-                                                color: Colors.black.withOpacity(
-                                                  0.6,
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.6,
                                                 ),
                                                 borderRadius:
                                                     BorderRadius.circular(20),

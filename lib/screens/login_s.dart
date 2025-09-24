@@ -51,75 +51,70 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
 
     try {
       print('🔄 Login: Starting Google Sign-In process...');
-      bool success = await authService.signInWithGoogle();
+      final result = await authService.signInWithGoogle();
       setState(() => _loading = false);
 
-      if (success) {
-        print('✅ Login: Google Sign-In successful');
-        final user = authService.currentUser; // Access currentUser
-        if (user != null) {
-          print('✅ Login: User authenticated: ${user.email}');
-          // Check if user profile is complete
-          final userDetails = await FirestoreService().getUserDetails(user.uid);
+      if (!mounted) return;
 
-          // If user doesn't have username, redirect to user details screen
+      switch (result.status) {
+        case GoogleSignInStatus.success:
+          final user = result.user;
+          if (user == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Authentication error: No user returned'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
+          final userDetails = await FirestoreService().getUserDetails(user.uid);
+          if (!mounted) return;
+          
           if (userDetails == null ||
               userDetails['username'] == null ||
               userDetails['username'].toString().isEmpty) {
-            print('🔄 Login: Redirecting to user details screen');
-            if (mounted) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder:
-                      (_) => const UserDetailsScreen(isFromPhoneSignup: false),
-                ),
-              );
-            }
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const UserDetailsScreen(isFromPhoneSignup: false),
+              ),
+            );
           } else {
-            // User profile is complete, go to home
-            print('🔄 Login: Redirecting to home screen');
-            if (mounted) {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/home',
-                (route) => false,
-              );
-            }
+            Navigator.pushNamedAndRemoveUntil(context, '/home', (r) => false);
           }
-        } else {
-          print('❌ Login: No user found after successful sign-in');
+          break;
+        case GoogleSignInStatus.cancelled:
+        case GoogleSignInStatus.popupClosed:
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Authentication error: No user found'),
+                content: Text('Sign-In cancelled.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          break;
+        case GoogleSignInStatus.error:
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(result.message ?? 'Google Sign-In failed.'),
                 backgroundColor: Colors.red,
               ),
             );
           }
-        }
-      } else {
-        print('❌ Login: Google Sign-In failed');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Google Sign-In failed. Please try again.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+          break;
       }
     } catch (e) {
-      print('❌ Login: Exception during Google Sign-In: $e');
       setState(() => _loading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Sign-in error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sign-in error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

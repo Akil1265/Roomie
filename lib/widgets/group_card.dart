@@ -53,10 +53,35 @@ class GroupCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(8.0),
             child: Image.network(
-              imageUrl,
+              () { debugPrint('[GroupCard] Loading image: $imageUrl'); return imageUrl; }(),
               width: 70,
               height: 70,
               fit: BoxFit.cover,
+              // Add basic error handling & logging to diagnose missing images
+              errorBuilder: (context, error, stack) {
+                debugPrint('[GroupCard] Failed to load image: $imageUrl error: $error');
+                return Container(
+                  width: 70,
+                  height: 70,
+                  color: Colors.grey.shade200,
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.broken_image, color: Colors.grey),
+                );
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  width: 70,
+                  height: 70,
+                  color: Colors.grey.shade100,
+                  alignment: Alignment.center,
+                  child: const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                );
+              },
             ),
           ),
         ],

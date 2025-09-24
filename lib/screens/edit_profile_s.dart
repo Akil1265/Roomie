@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:roomie/services/firestore_service.dart';
 import 'package:roomie/services/auth_service.dart';
 import 'package:roomie/models/user_model.dart';
-import 'package:roomie/widgets/mongodb_profile_image.dart';
+import 'package:roomie/widgets/profile_image_widget.dart';
 import 'dart:io';
 
 class EditProfileScreen extends StatefulWidget {
@@ -32,6 +33,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _ageController;
 
   File? _selectedImage;
+  XFile? _selectedXFile; // For web compatibility
   bool _isLoading = false;
   String? _currentProfileImageUrl;
 
@@ -84,7 +86,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       if (image != null) {
         setState(() {
-          _selectedImage = File(image.path);
+          _selectedXFile = image;
+          // For mobile compatibility, also set File if not web
+          if (!kIsWeb) {
+            _selectedImage = File(image.path);
+          }
         });
       }
     } catch (e) {
@@ -118,7 +124,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
 
       // Show a specific message if trying to upload image
-      if (_selectedImage != null) {
+      if (_selectedXFile != null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -136,7 +142,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         bio: _bioController.text.trim(),
         email: widget.currentUser.email,
         phone: _phoneController.text.trim(),
-        profileImage: _selectedImage,
+        profileImage: _selectedXFile ?? _selectedImage, // Pass XFile or File
       );
 
       // Then update additional fields directly in Firestore
@@ -167,7 +173,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop(true); // Return true to indicate success
+        // Fetch fresh doc to obtain latest profileImageUrl immediately
+        final fresh = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        final freshData = fresh.data();
+        final freshUrl = freshData?['profileImageUrl'] as String?;
+        if (mounted) {
+          Navigator.of(context).pop({'profileImageUrl': freshUrl});
+        }
       }
     } catch (e) {
       print('Error updating profile: $e'); // Add debugging
@@ -242,21 +254,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Stack(
                   children: [
                     // Show selected image if user picked one, otherwise show current MongoDB profile image
-                    _selectedImage != null
-                        ? CircleAvatar(
-                          radius: 60,
-                          backgroundColor: const Color(0xFFF1F2F4),
-                          backgroundImage: FileImage(_selectedImage!),
-                        )
-                        : MongoDBProfileImage(
-                          imageId: _currentProfileImageUrl,
-                          radius: 60,
-                          placeholder: const Icon(
-                            Icons.person,
-                            size: 60,
-                            color: Color(0xFF677583),
-                          ),
-                        ),
+                    ProfileImageWidget(
+                      imageUrl: _currentProfileImageUrl,
+                      localPreviewFile: !kIsWeb ? _selectedImage : null,
+                      radius: 60,
+                      placeholder: const Icon(
+                        Icons.person,
+                        size: 60,
+                        color: Color(0xFF677583),
+                      ),
+                    ),
                     Positioned(
                       bottom: 0,
                       right: 0,
@@ -284,7 +291,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               // Profile Picture Status Text
               Text(
-                _selectedImage != null
+                _selectedXFile != null || _selectedImage != null
                     ? 'New image selected'
                     : (_currentProfileImageUrl != null &&
                             _currentProfileImageUrl!.isNotEmpty
@@ -292,7 +299,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         : 'No profile image'),
                 style: TextStyle(
                   color:
-                      _selectedImage != null
+                      _selectedXFile != null || _selectedImage != null
                           ? Colors.green
                           : const Color(0xFF677583),
                   fontSize: 12,

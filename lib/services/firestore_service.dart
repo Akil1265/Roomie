@@ -1,17 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:roomie/services/profile_image_service.dart';
 import 'package:roomie/services/profile_image_notifier.dart';
-import 'dart:io';
 
 class FirestoreService {
   final _firestore = FirebaseFirestore.instance;
   final _profileImageService = ProfileImageService();
   final _profileImageNotifier = ProfileImageNotifier();
 
-  // Get profile image from MongoDB
-  Future<String?> getProfileImage(String imageId) async {
+  // Get profile image (now just returns URL if already a URL)
+  Future<String?> getProfileImage(String imageUrlOrId) async {
     try {
-      return await _profileImageService.getUserProfileImage(imageId);
+      return await _profileImageService.getUserProfileImage(imageUrlOrId);
     } catch (e) {
       print('Error getting profile image: $e');
       return null;
@@ -53,7 +52,7 @@ class FirestoreService {
     required String bio,
     required String email,
     required String phone,
-    File? profileImage,
+    dynamic profileImage, // Can be File, XFile, or null
     String? location,
     String? occupation,
     int? age,
@@ -68,40 +67,29 @@ class FirestoreService {
       existingProfileImageUrl = data?['profileImageUrl'] as String?;
     }
 
-    String? profileImageUrl =
-        existingProfileImageUrl; // Start with existing URL
+    String? profileImageUrl = existingProfileImageUrl; // Start with existing URL
 
-    // Store profile image in MongoDB if provided
+    // Upload to Cloudinary if new file provided
     if (profileImage != null) {
       try {
-        print('Attempting to store profile image in MongoDB...'); // Debug log
-
-        // Use the dedicated profile image service for better management
-        final newImageId = await _profileImageService.saveUserProfileImage(
+        print('Uploading profile image to Cloudinary...');
+        // Test connection first
+        _profileImageService.testCloudinaryConnection();
+        
+        final uploadedUrl = await _profileImageService.saveUserProfileImage(
           userId: userId,
           imageFile: profileImage,
-          previousImageId:
-              existingProfileImageUrl, // This will clean up old images
+          previousImageId: existingProfileImageUrl,
         );
-
-        if (newImageId != null) {
-          profileImageUrl = newImageId;
-          print(
-            'Profile image stored in MongoDB with ID: $newImageId',
-          ); // Debug log
-
-          // Notify all widgets about the profile image change
-          _profileImageNotifier.updateProfileImage(newImageId);
-
-          // Clean up old images (keep only recent 5)
-          await _profileImageService.cleanupOldProfileImages(userId);
+        if (uploadedUrl != null) {
+          profileImageUrl = uploadedUrl;
+          _profileImageNotifier.updateProfileImage(uploadedUrl);
+          print('Profile image uploaded to Cloudinary: $uploadedUrl');
         } else {
-          print('Failed to store profile image in MongoDB');
+          print('Cloudinary upload failed; keeping existing image');
         }
       } catch (e) {
-        print('Error storing profile image: $e');
-        // Keep existing image URL if upload fails
-        print('Continuing without image upload due to storage error');
+        print('Error uploading profile image to Cloudinary: $e');
       }
     }
 
