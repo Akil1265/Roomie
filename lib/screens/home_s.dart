@@ -11,7 +11,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
+  final PageController _pageController = PageController(initialPage: 1); // Start at home (middle page)
+  int _currentPageIndex = 1; // 0: Search, 1: Home, 2: Messages
   final GroupsService _groupsService = GroupsService();
   List<Map<String, dynamic>> _availableGroups = [];
   Map<String, dynamic>? _currentUserGroup;
@@ -58,24 +59,78 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void navigateToPage(int pageIndex) {
+    _pageController.animateToPage(
+      pageIndex,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    Widget currentPage;
-    switch (_selectedIndex) {
-      case 0:
-        currentPage = _buildHomeContent();
-        break;
-      case 3:
-        currentPage = _buildSearchPage();
-        break;
-      case 4:
-        currentPage = _buildProfilePage();
-        break;
-      default:
-        currentPage = _buildHomeContent();
-    }
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          PageView(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentPageIndex = index;
+              });
+            },
+            children: [
+              _buildSearchPage(),     // Page 0 - Swipe left to reach from home
+              _buildHomeContent(),    // Page 1 - Center/Default page
+              _buildMessagesPage(),   // Page 2 - Swipe right to reach from home
+            ],
+          ),
+          // Page indicators
+          Positioned(
+            bottom: 50,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildPageIndicator(0, 'Search'),
+                const SizedBox(width: 20),
+                _buildPageIndicator(1, 'Home'),
+                const SizedBox(width: 20),
+                _buildPageIndicator(2, 'Messages'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    return currentPage;
+  Widget _buildPageIndicator(int index, String label) {
+    final isActive = _currentPageIndex == index;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFF121417) : Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        border: isActive ? null : Border.all(color: Colors.grey[300]!),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: isActive ? Colors.white : Colors.grey[600],
+          fontSize: 12,
+          fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+        ),
+      ),
+    );
   }
 
   Widget _buildHomeContent() {
@@ -103,30 +158,60 @@ class _HomeScreenState extends State<HomeScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    // Add button (create group)
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: IconButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CreateGroupScreen(),
+                    Row(
+                      children: [
+                        // Profile button
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const UserProfileScreen(),
+                                ),
+                              );
+                            },
+                            icon: const Icon(
+                              Icons.person_outline,
+                              color: Color(0xFF121417),
+                              size: 24,
                             ),
-                          ).then((_) => _loadAvailableGroups());
-                        },
-                        icon: const Icon(
-                          Icons.add,
-                          color: Color(0xFF121417),
-                          size: 24,
+                            padding: EdgeInsets.zero,
+                          ),
                         ),
-                        padding: EdgeInsets.zero,
-                      ),
+                        const SizedBox(width: 8),
+                        // Add button (create group)
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const CreateGroupScreen(),
+                                ),
+                              ).then((_) => _loadAvailableGroups());
+                            },
+                            icon: const Icon(
+                              Icons.add,
+                              color: Color(0xFF121417),
+                              size: 24,
+                            ),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -533,14 +618,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
-                  const SizedBox(height: 100), // Space for bottom navigation
                 ],
               ),
             ),
           ),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -548,93 +631,97 @@ class _HomeScreenState extends State<HomeScreen> {
     return SearchPageWidget();
   }
 
-  Widget _buildProfilePage() {
+  Widget _buildMessagesPage() {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: const SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.person_outline, color: Color(0xFF677583), size: 64),
-              SizedBox(height: 16),
-              Text(
-                'Profile',
-                style: TextStyle(
-                  color: Color(0xFF121417),
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Custom App Bar
+            Container(
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 12.0,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Messages',
+                      style: TextStyle(
+                        color: Color(0xFF121417),
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: IconButton(
+                        onPressed: () {
+                          // Add any message actions here
+                        },
+                        icon: const Icon(
+                          Icons.more_vert,
+                          color: Color(0xFF121417),
+                          size: 24,
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: 8),
-              Text(
-                'Manage your account',
-                style: TextStyle(color: Color(0xFF677583), fontSize: 16),
+            ),
+            // Messages content
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.chat_bubble_outline,
+                      color: Colors.grey[400],
+                      size: 64,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No messages yet',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Your group messages will appear here',
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFF1F2F4), width: 1)),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildBottomNavItem(Icons.home, 0, true),
-              _buildBottomNavItem(Icons.chat_bubble_outline, 1, false),
-              _buildBottomNavItem(Icons.add_box_outlined, 2, false),
-              _buildBottomNavItem(Icons.search, 3, false),
-              _buildBottomNavItem(Icons.person_outline, 4, false),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildBottomNavItem(IconData icon, int index, bool filled) {
-    final isSelected = _selectedIndex == index;
-    return GestureDetector(
-      onTap: () {
-        if (index == 2) {
-          // Plus/Add button - navigate to create group
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CreateGroupScreen()),
-          ).then((_) => _loadAvailableGroups());
-        } else if (index == 4) {
-          // Profile button
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const UserProfileScreen()),
-          );
-        } else {
-          setState(() {
-            _selectedIndex = index;
-          });
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-        child: Icon(
-          isSelected && filled ? Icons.home : icon,
-          color: isSelected ? const Color(0xFF121417) : const Color(0xFF677583),
-          size: 24,
-        ),
-      ),
-    );
-  }
+
+
+
+
+
 }
 
 class SearchPageWidget extends StatefulWidget {
@@ -652,12 +739,9 @@ class _SearchPageWidgetState extends State<SearchPageWidget> {
   bool _isLoading = false;
   String _selectedLocation = 'All';
   double _maxRent = 2000;
-  String _groupType = 'All';
+  String _selectedOccupation = 'All';
+  int _preferredMembers = 0; // 0 means any
   String _sortBy = 'Rent: Low to High';
-
-  final List<String> _locations = ['All', 'Downtown', 'Near the park', 'Suburbs', 'City Center', 'University Area', 'Business District'];
-  final List<String> _groupTypes = ['All', 'Small Group', 'Medium Group', 'Large Group'];
-  final List<String> _sortOptions = ['Rent: Low to High', 'Rent: High to Low', 'Recently Added', 'Most Popular', 'Members: Few to Many'];
 
   @override
   void initState() {
@@ -736,15 +820,6 @@ class _SearchPageWidgetState extends State<SearchPageWidget> {
         _filteredGroups = [];
         _isLoading = false;
       });
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error searching groups: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     }
   }
 
@@ -778,10 +853,14 @@ class _SearchPageWidgetState extends State<SearchPageWidget> {
         // Rent filter
         final matchesRent = group['rent'] <= _maxRent;
 
-        // Group type filter
-        final matchesType = _groupType == 'All' || group['type'] == _groupType;
+        // Member count filter (0 means any)
+        final matchesMembers = _preferredMembers == 0 || group['maxMembers'] == _preferredMembers;
 
-        return matchesSearch && matchesLocation && matchesRent && matchesType;
+        // For occupation filter, we'll check if any group member has the occupation
+        // For now, we'll skip this until you have occupation data in groups
+        final matchesOccupation = _selectedOccupation == 'All';
+
+        return matchesSearch && matchesLocation && matchesRent && matchesMembers && matchesOccupation;
       }).toList();
 
       // Apply sorting
@@ -798,8 +877,6 @@ class _SearchPageWidgetState extends State<SearchPageWidget> {
             return b['id'].compareTo(a['id']); // Fallback
           case 'Most Popular':
             return b['memberCount'].compareTo(a['memberCount']);
-          case 'Members: Few to Many':
-            return a['memberCount'].compareTo(b['memberCount']);
           default:
             return 0;
         }
@@ -810,226 +887,269 @@ class _SearchPageWidgetState extends State<SearchPageWidget> {
   void _showFilterDialog() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFAF5FE),
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Filters',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF121417),
+            return DraggableScrollableSheet(
+              initialChildSize: 0.75,
+              minChildSize: 0.5,
+              maxChildSize: 0.9,
+              expand: false,
+              builder: (context, scrollController) {
+                return Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Filters',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF121417),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () => Navigator.pop(context),
+                              icon: const Icon(Icons.close, color: Colors.grey),
+                            ),
+                          ],
                         ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _selectedLocation = 'All';
-                            _maxRent = 2000;
-                            _groupType = 'All';
-                            _sortBy = 'Rent: Low to High';
-                          });
-                          setModalState(() {});
-                          _applyFilters();
-                        },
-                        child: const Text('Reset'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+                        const SizedBox(height: 16),
 
-                  // Location Filter
-                  const Text(
-                    'Location',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF121417),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 40,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _locations.length,
-                      itemBuilder: (context, index) {
-                        final location = _locations[index];
-                        final isSelected = _selectedLocation == location;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Text(location),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              setState(() {
-                                _selectedLocation = location;
-                              });
-                              setModalState(() {});
+                        // Location Filter
+                        const Text(
+                          'Location',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF121417),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            _buildLocationChip('All Areas', 'All', setModalState),
+                            _buildLocationChip('Downtown', 'Downtown', setModalState),
+                            _buildLocationChip('Suburbs', 'Suburbs', setModalState),
+                            _buildLocationChip('City Center', 'City Center', setModalState),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Rent Range Slider
+                        const Text(
+                          'Rent Range',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF121417),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Text(
+                              '\$500',
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                            Expanded(
+                              child: Slider(
+                                value: _maxRent,
+                                min: 500,
+                                max: 2500,
+                                divisions: 40,
+                                activeColor: const Color(0xFF121417),
+                                inactiveColor: const Color(0xFF677583).withValues(alpha: 0.3),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _maxRent = value;
+                                  });
+                                  setModalState(() {});
+                                },
+                              ),
+                            ),
+                            Text(
+                              '\$${_maxRent.toInt()}',
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Member Count Filter
+                        const Text(
+                          'Preferred Members',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF121417),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            _buildMemberChip('Any', 0, setModalState),
+                            _buildMemberChip('2 Members', 2, setModalState),
+                            _buildMemberChip('3 Members', 3, setModalState),
+                            _buildMemberChip('4+ Members', 4, setModalState),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Occupation Filter
+                        const Text(
+                          'Occupation',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF121417),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            _buildOccupationChip('All', 'All', setModalState),
+                            _buildOccupationChip('Student', 'Student', setModalState),
+                            _buildOccupationChip('Professional', 'Professional', setModalState),
+                            _buildOccupationChip('Freelancer', 'Freelancer', setModalState),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Apply Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
                               _applyFilters();
+                              Navigator.pop(context);
                             },
-                            backgroundColor: Colors.grey[100],
-                            selectedColor: const Color(0xFF007AFF).withValues(alpha: 0.2),
-                            labelStyle: TextStyle(
-                              color: isSelected ? const Color(0xFF007AFF) : const Color(0xFF677583),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF121417),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              elevation: 0,
+                            ),
+                            child: const Text(
+                              'Apply Filters',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Max Rent Filter
-                  Text(
-                    'Max Rent: \$${_maxRent.toInt()}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF121417),
-                    ),
-                  ),
-                  Slider(
-                    value: _maxRent,
-                    min: 500,
-                    max: 3000,
-                    divisions: 50,
-                    activeColor: const Color(0xFF007AFF),
-                    onChanged: (value) {
-                      setState(() {
-                        _maxRent = value;
-                      });
-                      setModalState(() {});
-                    },
-                    onChangeEnd: (value) {
-                      _applyFilters();
-                    },
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Group Type Filter
-                  const Text(
-                    'Group Type',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF121417),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 40,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _groupTypes.length,
-                      itemBuilder: (context, index) {
-                        final type = _groupTypes[index];
-                        final isSelected = _groupType == type;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Text(type),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              setState(() {
-                                _groupType = type;
-                              });
-                              setModalState(() {});
-                              _applyFilters();
-                            },
-                            backgroundColor: Colors.grey[100],
-                            selectedColor: const Color(0xFF007AFF).withValues(alpha: 0.2),
-                            labelStyle: TextStyle(
-                              color: isSelected ? const Color(0xFF007AFF) : const Color(0xFF677583),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Sort By
-                  const Text(
-                    'Sort By',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF121417),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    initialValue: _sortBy,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xFFF1F2F4)),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
-                    items: _sortOptions.map((option) {
-                      return DropdownMenuItem(
-                        value: option,
-                        child: Text(option),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          _sortBy = value;
-                        });
-                        setModalState(() {});
-                        _applyFilters();
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Apply Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF007AFF),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: Text(
-                        _filteredGroups.isEmpty && _searchController.text.trim().isEmpty
-                            ? 'Apply Filters'
-                            : 'Apply Filters (${_filteredGroups.length} groups)',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                        // Extra padding for safe area
+                        const SizedBox(height: 20),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                );
+              },
             );
           },
         );
       },
+    );
+  }
+
+  Widget _buildLocationChip(String label, String value, Function setModalState) {
+    final isSelected = _selectedLocation == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedLocation = value;
+        });
+        setModalState(() {});
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF121417) : const Color(0xFFFAF5FE),
+          borderRadius: BorderRadius.circular(20),
+          border: isSelected ? null : Border.all(color: const Color(0xFF677583).withValues(alpha: 0.3)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : const Color(0xFF677583),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMemberChip(String label, int value, Function setModalState) {
+    final isSelected = _preferredMembers == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _preferredMembers = value;
+        });
+        setModalState(() {});
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF121417) : const Color(0xFFFAF5FE),
+          borderRadius: BorderRadius.circular(20),
+          border: isSelected ? null : Border.all(color: const Color(0xFF677583).withValues(alpha: 0.3)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : const Color(0xFF677583),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOccupationChip(String label, String value, Function setModalState) {
+    final isSelected = _selectedOccupation == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedOccupation = value;
+        });
+        setModalState(() {});
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF121417) : const Color(0xFFFAF5FE),
+          borderRadius: BorderRadius.circular(20),
+          border: isSelected ? null : Border.all(color: const Color(0xFF677583).withValues(alpha: 0.3)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : const Color(0xFF677583),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
     );
   }
 
@@ -1189,9 +1309,7 @@ class _SearchPageWidgetState extends State<SearchPageWidget> {
                       child: OutlinedButton(
                         onPressed: () {
                           // TODO: Implement view details
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('View details for ${group['title']}')),
-                          );
+                          print('View details for ${group['title']}');
                         },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF007AFF),
@@ -1207,38 +1325,18 @@ class _SearchPageWidgetState extends State<SearchPageWidget> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () async {
-                          // TODO: Implement join group functionality
                           try {
                             final success = await _groupsService.joinGroup(group['id']);
                             if (success && mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Successfully joined ${group['title']}!'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
                               // Refresh the search results
                               final currentQuery = _searchController.text.trim();
                               if (currentQuery.isNotEmpty && currentQuery.length >= 2) {
                                 _searchGroups(currentQuery);
                               }
-                            } else if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Failed to join ${group['title']}'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
                             }
                           } catch (e) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Error: $e'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
+                            // Silent error - just print to console
+                            print('Error joining group: $e');
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -1297,7 +1395,7 @@ class _SearchPageWidgetState extends State<SearchPageWidget> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Find Your Group',
+                    'Search Here',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -1331,12 +1429,13 @@ class _SearchPageWidgetState extends State<SearchPageWidget> {
                       const SizedBox(width: 12),
                       Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF007AFF),
+                          color: Colors.grey[100],
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[300]!),
                         ),
                         child: IconButton(
                           onPressed: _showFilterDialog,
-                          icon: const Icon(Icons.tune, color: Colors.white),
+                          icon: Icon(Icons.tune, color: Colors.grey[700]),
                         ),
                       ),
                     ],
@@ -1393,36 +1492,6 @@ class _SearchPageWidgetState extends State<SearchPageWidget> {
                                   fontSize: 16,
                                   color: Colors.grey[500],
                                   height: 1.4,
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF007AFF).withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(25),
-                                  border: Border.all(
-                                    color: const Color(0xFF007AFF).withValues(alpha: 0.3),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.lightbulb_outline,
-                                      size: 20,
-                                      color: const Color(0xFF007AFF),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Try searching: "downtown", "shared room", "student"',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: const Color(0xFF007AFF),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
                                 ),
                               ),
                             ],
@@ -1497,49 +1566,6 @@ class _SearchPageWidgetState extends State<SearchPageWidget> {
                                 ),
             ),
           ],
-        ),
-      ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Color(0xFFF1F2F4), width: 1)),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildBottomNavItem(Icons.home, 0, true, () {
-                  // Navigate back to home
-                  if (context.findAncestorStateOfType<_HomeScreenState>() != null) {
-                    context.findAncestorStateOfType<_HomeScreenState>()!.setState(() {
-                      context.findAncestorStateOfType<_HomeScreenState>()!._selectedIndex = 0;
-                    });
-                  }
-                }),
-                _buildBottomNavItem(Icons.chat_bubble_outline, 1, false, () {}),
-                _buildBottomNavItem(Icons.add_box_outlined, 2, false, () {}),
-                _buildBottomNavItem(Icons.search, 3, false, () {}),
-                _buildBottomNavItem(Icons.person_outline, 4, false, () {}),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavItem(IconData icon, int index, bool filled, VoidCallback onTap) {
-    final isSelected = index == 3; // Search is always selected on this page
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-        child: Icon(
-          isSelected && filled ? Icons.home : icon,
-          color: isSelected ? const Color(0xFF121417) : const Color(0xFF677583),
-          size: 24,
         ),
       ),
     );
