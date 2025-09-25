@@ -42,23 +42,34 @@ class AuthService {
         // For web, use Firebase Auth directly with Google provider
         final GoogleAuthProvider googleProvider = GoogleAuthProvider();
         googleProvider.addScope('email');
+        googleProvider.setCustomParameters({
+          'prompt': 'select_account', // Always show account selection
+          'include_granted_scopes': 'true',
+        });
         userCredential = await _auth.signInWithPopup(googleProvider);
       } else {
         // For mobile, use Google Sign-In package
         final GoogleSignIn googleSignIn = GoogleSignIn(
           scopes: ['email'],
+          // Add web client ID for better cross-platform support
+          serverClientId: '1066645245892-p4fvvqms9o76tsmstrrnon30h58vom8s.apps.googleusercontent.com',
         );
         
-        // Sign out first to ensure fresh sign-in
-        await googleSignIn.signOut();
+        print('🔄 Starting Google Sign-In flow...');
         
-        // Trigger the authentication flow
+        // ✅ ALWAYS sign out first to force account picker every time
+        await googleSignIn.signOut();
+        print('🔄 Signed out - forcing account selection...');
+        
+        // Trigger the authentication flow - this will ALWAYS show account picker
         final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
         
         if (googleUser == null) {
-          // User cancelled the sign-in
+          print('🚫 User cancelled Google sign-in');
           return const GoogleSignInResult(GoogleSignInStatus.cancelled);
         }
+        
+        print('✅ Google account selected: ${googleUser.email}');
         
         // Obtain the auth details from the request
         final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
