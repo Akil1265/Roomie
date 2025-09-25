@@ -45,37 +45,43 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     );
   }
 
-  Future<void> _googleSignIn() async {
+  /// ✅ Smart Google Authentication - Single button for all users
+  Future<void> _continueWithGoogle() async {
     setState(() => _loading = true);
     final authService = AuthService();
 
     try {
-      print('🔄 Login: Starting Google Sign-In process...');
+      print('🔄 Login: Starting Google authentication...');
       final result = await authService.signInWithGoogle();
       setState(() => _loading = false);
 
       if (!mounted) return;
 
+      print('🔄 Google auth result: ${result.status}');
+      
       switch (result.status) {
         case GoogleSignInStatus.success:
-          await _handleGoogleAuthSuccess(result.user, isSignUp: false);
+          print('✅ Google auth successful, handling user...');
+          await _handleGoogleAuthSuccess(result.user);
           break;
         case GoogleSignInStatus.cancelled:
         case GoogleSignInStatus.popupClosed:
+          print('🚫 Google auth cancelled by user');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Sign-In cancelled.'),
+                content: Text('Sign-in was cancelled. Please try again.'),
                 backgroundColor: Colors.orange,
               ),
             );
           }
           break;
         case GoogleSignInStatus.error:
+          print('🚨 Google auth error: ${result.message}');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(result.message ?? 'Google Sign-In failed.'),
+                content: Text('Authentication failed: ${result.message ?? 'Unknown error'}'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -83,68 +89,22 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           break;
       }
     } catch (e) {
+      print('🚨 Exception in Google auth: $e');
       setState(() => _loading = false);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Sign-in error: $e'),
+          content: Text('Authentication error: $e'),
           backgroundColor: Colors.red,
         ),
       );
     }
   }
 
-  Future<void> _googleSignUp() async {
-    setState(() => _loading = true);
-    final authService = AuthService();
-
-    try {
-      print('🔄 Login: Starting Google Sign-Up process...');
-      final result = await authService.signInWithGoogle();
-      setState(() => _loading = false);
-
-      if (!mounted) return;
-
-      switch (result.status) {
-        case GoogleSignInStatus.success:
-          await _handleGoogleAuthSuccess(result.user, isSignUp: true);
-          break;
-        case GoogleSignInStatus.cancelled:
-        case GoogleSignInStatus.popupClosed:
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Sign-Up cancelled.'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
-          break;
-        case GoogleSignInStatus.error:
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(result.message ?? 'Google Sign-Up failed.'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          break;
-      }
-    } catch (e) {
-      setState(() => _loading = false);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Sign-up error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  Future<void> _handleGoogleAuthSuccess(user, {required bool isSignUp}) async {
+  /// ✅ Smart routing logic based on user profile completion
+  Future<void> _handleGoogleAuthSuccess(user) async {
     if (user == null) {
+      print('🚨 No user returned from Google auth');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Authentication error: No user returned'),
@@ -154,29 +114,38 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       return;
     }
 
+    print('🔄 Checking user profile for: ${user.email} (${user.uid})');
     final userDetails = await FirestoreService().getUserDetails(user.uid);
     if (!mounted) return;
 
+    print('🔍 User details found: $userDetails');
+    
     if (userDetails == null ||
         userDetails['username'] == null ||
         userDetails['username'].toString().isEmpty) {
-      // New user or incomplete profile - go to user details
+      // ✅ New user or incomplete profile - go to user details page
+      print('📝 New user detected - navigating to User Details');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Welcome ${user.displayName ?? user.email}! Please complete your profile.'),
+          backgroundColor: Colors.green,
+        ),
+      );
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => UserDetailsScreen(isFromPhoneSignup: isSignUp),
+          builder: (_) => UserDetailsScreen(isFromPhoneSignup: false),
         ),
       );
     } else {
-      // Existing user with complete profile - go to home
-      if (isSignUp) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Welcome back! You already have an account.'),
-            backgroundColor: Colors.blue,
-          ),
-        );
-      }
+      // ✅ Existing user with complete profile - go directly to home
+      print('🏠 Existing user detected - going to Home');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Welcome back, ${userDetails['username']}!'),
+          backgroundColor: Colors.blue,
+        ),
+      );
       Navigator.pushNamedAndRemoveUntil(context, '/home', (r) => false);
     }
   }
@@ -320,77 +289,39 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                           ),
                         ),
                       ),
-                      // Google Sign-Up Button
+                      // ✅ Single Google Button - Smart Logic
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
-                          vertical: 6,
+                          vertical: 12,
                         ),
                         child: SizedBox(
                           width: double.infinity,
                           height: 48,
                           child: ElevatedButton.icon(
-                            onPressed: _loading ? null : _googleSignUp,
+                            onPressed: _loading ? null : _continueWithGoogle,
                             icon: const Icon(
                               Icons.g_mobiledata,
-                              color: Color(0xFF101418),
+                              color: Colors.white,
                               size: 28,
                             ),
                             label: const Text(
-                              'Sign up with Google',
+                              'Continue with Google',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                                 letterSpacing: 0.015,
+                                color: Colors.white,
                               ),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFEAEDF1),
-                              foregroundColor: const Color(0xFF101418),
+                              backgroundColor: const Color(0xFF4285F4),
+                              foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(32),
                               ),
-                              elevation: 0,
-                              padding: const EdgeInsets.only(left: 0),
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Google Sign-In Button
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 6,
-                        ),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: OutlinedButton.icon(
-                            onPressed: _loading ? null : _googleSignIn,
-                            icon: const Icon(
-                              Icons.g_mobiledata,
-                              color: Color(0xFF4285F4),
-                              size: 28,
-                            ),
-                            label: const Text(
-                              'Sign in with Google',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                letterSpacing: 0.015,
-                                color: Color(0xFF4285F4),
-                              ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              side: const BorderSide(
-                                color: Color(0xFF4285F4),
-                                width: 1.5,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(32),
-                              ),
-                              elevation: 0,
+                              elevation: 2,
+                              shadowColor: const Color(0xFF4285F4).withOpacity(0.3),
                               padding: const EdgeInsets.only(left: 0),
                             ),
                           ),
