@@ -27,6 +27,25 @@ class AuthService {
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
+  /// Helper function to get detailed error information
+  String _getDetailedErrorMessage(String error) {
+    if (error.contains('DEVELOPER_ERROR')) {
+      return '⚠️ Configuration Error: SHA-1 fingerprint not registered in Firebase Console.\n'
+          '🔧 Required SHA-1: 84:C6:DF:83:C9:99:7A:7B:36:E8:9F:1F:D6:03:C7:65:32:9B:3E:B9\n'
+          '📝 Add this fingerprint to Firebase Console → Project Settings → Your apps → SHA certificate fingerprints';
+    }
+    if (error.contains('API_NOT_CONNECTED')) {
+      return 'Google Services API not connected. Check SHA-1 fingerprint configuration.';
+    }
+    if (error.contains('SIGN_IN_FAILED')) {
+      return 'Google Sign-In failed. Verify Firebase configuration and SHA-1 fingerprints.';
+    }
+    if (error.contains('ClientConfigurationException')) {
+      return 'Google client configuration error. Check google-services.json and SHA-1 fingerprints.';
+    }
+    return error;
+  }
+
   Future<GoogleSignInResult> signInWithGoogle() async {
     if (_signingIn) {
       return const GoogleSignInResult(
@@ -37,7 +56,7 @@ class AuthService {
     _signingIn = true;
     try {
       UserCredential userCredential;
-      
+
       if (kIsWeb) {
         // For web, use Firebase Auth directly with Google provider
         final GoogleAuthProvider googleProvider = GoogleAuthProvider();
@@ -49,69 +68,78 @@ class AuthService {
         userCredential = await _auth.signInWithPopup(googleProvider);
       } else {
         // For mobile, use Google Sign-In package
-        final GoogleSignIn googleSignIn = GoogleSignIn(
-          scopes: ['email'],
-          // Add web client ID for better cross-platform support
-          serverClientId: '1066645245892-p4fvvqms9o76tsmstrrnon30h58vom8s.apps.googleusercontent.com',
-        );
-        
+        final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
+
         print('🔄 Starting Google Sign-In flow...');
-        
+
         // ✅ ALWAYS sign out first to force account picker every time
         await googleSignIn.signOut();
         print('🔄 Signed out - forcing account selection...');
-        
+
         // Trigger the authentication flow - this will ALWAYS show account picker
         final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-        
+
         if (googleUser == null) {
           print('🚫 User cancelled Google sign-in');
           return const GoogleSignInResult(GoogleSignInStatus.cancelled);
         }
-        
+
         print('✅ Google account selected: ${googleUser.email}');
-        
+
         // Obtain the auth details from the request
-        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-        
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+
         // Create a new credential
         final credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
           idToken: googleAuth.idToken,
+          accessToken: googleAuth.accessToken,
         );
-        
+
         // Sign in to Firebase with the Google credential
         userCredential = await _auth.signInWithCredential(credential);
       }
-      
+
       final user = userCredential.user;
-      
+
       if (user == null) {
         return const GoogleSignInResult(
           GoogleSignInStatus.error,
           message: 'Firebase user null after Google sign-in',
         );
       }
-      
+
       // Save user details to Firestore
       await FirestoreService().saveUserDetails(
         user.uid,
         user.email ?? '',
         name: user.displayName,
       );
-      
+
       return GoogleSignInResult(GoogleSignInStatus.success, user: user);
     } catch (e) {
       final msg = e.toString();
       print('🚨 Google Sign-In Error: $msg');
-      
-      // Handle different error types
-      if (msg.contains('popup-blocked') || 
+      print('🔍 Error type: ${e.runtimeType}');
+
+      // Get detailed error message
+      final detailedMsg = _getDetailedErrorMessage(msg);
+
+      // Handle specific error types for better debugging
+      if (msg.contains('DEVELOPER_ERROR') ||
+          msg.contains('API_NOT_CONNECTED')) {
+        print('⚠️  SHA-1 fingerprint not registered in Firebase Console');
+        return GoogleSignInResult(
+          GoogleSignInStatus.error,
+          message: detailedMsg,
+        );
+      }
+      if (msg.contains('popup-blocked') ||
           msg.contains('popup-closed-by-user') ||
           msg.contains('cancelled-popup-request')) {
         return const GoogleSignInResult(GoogleSignInStatus.popupClosed);
       }
-      if (msg.contains('user-cancelled') || 
+      if (msg.contains('user-cancelled') ||
           msg.contains('cancelled') ||
           msg.contains('auth/cancelled-popup-request') ||
           msg.contains('sign_in_canceled')) {
@@ -123,10 +151,15 @@ class AuthService {
           message: 'Network error. Please check your internet connection.',
         );
       }
-      return GoogleSignInResult(
-        GoogleSignInStatus.error,
-        message: msg,
-      );
+      if (msg.contains('sign_in_failed') ||
+          msg.contains('SIGN_IN_FAILED') ||
+          msg.contains('ClientConfigurationException')) {
+        return GoogleSignInResult(
+          GoogleSignInStatus.error,
+          message: detailedMsg,
+        );
+      }
+      return GoogleSignInResult(GoogleSignInStatus.error, message: detailedMsg);
     } finally {
       _signingIn = false;
     }
@@ -210,11 +243,12 @@ class AuthService {
   /// ❓ Check if phone number exists in Firestore
   Future<bool> doesPhoneExist(String phoneNumber) async {
     try {
-      final query = await FirebaseFirestore.instance
-          .collection('users')
-          .where('phone', isEqualTo: phoneNumber)
-          .limit(1)
-          .get();
+      final query =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .where('phone', isEqualTo: phoneNumber)
+              .limit(1)
+              .get();
 
       return query.docs.isNotEmpty;
     } catch (e) {
@@ -228,10 +262,10 @@ class AuthService {
     try {
       // Sign out from Google Sign-In if not on web
       if (!kIsWeb) {
-        final GoogleSignIn googleSignIn = GoogleSignIn();
+        final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
         await googleSignIn.signOut();
       }
-      
+
       // Sign out from Firebase Auth
       await _auth.signOut();
       print('✅ Successfully signed out');

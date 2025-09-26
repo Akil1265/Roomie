@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:roomie/services/auth_service.dart';
 import 'package:roomie/services/firestore_service.dart';
+import 'package:roomie/widgets/roomie_loading_widget.dart';
 import 'package:roomie/screens/user_details_s.dart';
 
 class OtpScreen extends StatefulWidget {
@@ -277,10 +278,7 @@ class _OtpScreenState extends State<OtpScreen> {
                           ? const SizedBox(
                             width: 24,
                             height: 24,
-                            child: CircularProgressIndicator(
-                              color: Color(0xFF101418),
-                              strokeWidth: 2,
-                            ),
+                            child: RoomieLoadingSmall(size: 24),
                           )
                           : const Text(
                             'Verify',

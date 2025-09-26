@@ -7,6 +7,7 @@
         ".read": "auth != null && root.child('chats').child($chatId).child('participants').child(auth.uid).exists()",
         ".write": "auth != null && root.child('chats').child($chatId).child('participants').child(auth.uid).exists()",
         "messages": {
+          ".indexOn": ["timestamp"],
           "$messageId": {
             ".write": "auth != null"
           }
@@ -18,10 +19,18 @@
         ".read": "auth != null",
         ".write": "auth != null",
         "messages": {
+          ".indexOn": ["timestamp"],
           "$messageId": {
             ".write": "auth != null"
           }
         }
+      }
+    },
+    "userConversations": {
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        ".write": "auth != null && auth.uid == $userId",
+        ".indexOn": ["lastMessageTime"]
       }
     }
   }

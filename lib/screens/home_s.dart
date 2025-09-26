@@ -6,6 +6,7 @@ import 'package:roomie/screens/available_group_detail_s.dart';
 import 'package:roomie/screens/join_requests_s.dart';
 import 'package:roomie/screens/messages_page.dart';
 import 'package:roomie/services/groups_service.dart';
+import 'package:roomie/widgets/roomie_loading_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -314,7 +315,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (_isLoadingGroups)
                       const Padding(
                         padding: EdgeInsets.all(32.0),
-                        child: Center(child: CircularProgressIndicator()),
+                        child: Center(
+                        child: RoomieLoadingWidget(
+                          size: 80,
+                          text: 'Loading groups...',
+                          showText: true,
+                        ),
+                      ),
                       )
                     else ...[
                       // Current Room Section (show if user is in a group)

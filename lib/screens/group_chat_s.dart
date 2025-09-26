@@ -140,7 +140,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         actions: [
           IconButton(
             onPressed: () {
-              // TODO: Add group info/settings
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Group info coming soon'),

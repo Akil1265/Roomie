@@ -145,8 +145,8 @@ class MessagesService {
           'lastMessage': lastMessageText,
           'lastMessageSender': lastMessage?['senderName'] ?? '',
           'lastMessageTime': lastMessageTime ?? DateTime.now(),
-          'unreadCount': 0, // TODO: Implement unread count logic
-          'groupData': groupData, // Full group data for navigation
+          'unreadCount': 0,
+          'groupData': groupData, 
         });
       }
 
@@ -325,7 +325,7 @@ class MessagesService {
           'lastMessage': lastMessage?['message'] ?? 'No messages yet',
           'lastMessageSender': lastMessage?['senderName'] ?? '',
           'lastMessageTime': lastMessageTime,
-          'unreadCount': 0, // TODO: Implement unread count logic
+          'unreadCount': 0, 
           'userData': userData, // Full user data for navigation
         });
       }
