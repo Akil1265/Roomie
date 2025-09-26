@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
+import '../widgets/roomie_loading_widget.dart';
 import 'otp_s.dart';
 import 'user_details_s.dart';
 
@@ -38,8 +40,10 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       },
       onFailed: (e) {
         setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Phone Auth Error: ${e.message}')),
+        _showCustomSnackBar(
+          context,
+          'Phone Auth Error: ${e.message}',
+          isError: true,
         );
       },
     );
@@ -58,7 +62,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       if (!mounted) return;
 
       print('🔄 Google auth result: ${result.status}');
-      
+
       switch (result.status) {
         case GoogleSignInStatus.success:
           print('✅ Google auth successful, handling user...');
@@ -68,22 +72,20 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
         case GoogleSignInStatus.popupClosed:
           print('🚫 Google auth cancelled by user');
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Sign-in was cancelled. Please try again.'),
-                backgroundColor: Colors.orange,
-              ),
+            _showCustomSnackBar(
+              context,
+              'Sign-in was cancelled. Please try again.',
+              isWarning: true,
             );
           }
           break;
         case GoogleSignInStatus.error:
           print('🚨 Google auth error: ${result.message}');
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Authentication failed: ${result.message ?? 'Unknown error'}'),
-                backgroundColor: Colors.red,
-              ),
+            _showCustomSnackBar(
+              context,
+              'Authentication failed: ${result.message ?? 'Unknown error'}',
+              isError: true,
             );
           }
           break;
@@ -92,24 +94,18 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       print('🚨 Exception in Google auth: $e');
       setState(() => _loading = false);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Authentication error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showCustomSnackBar(context, 'Authentication error: $e', isError: true);
     }
   }
 
   /// ✅ Smart routing logic based on user profile completion
-  Future<void> _handleGoogleAuthSuccess(user) async {
+  Future<void> _handleGoogleAuthSuccess(User? user) async {
     if (user == null) {
       print('🚨 No user returned from Google auth');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Authentication error: No user returned'),
-          backgroundColor: Colors.red,
-        ),
+      _showCustomSnackBar(
+        context,
+        'Authentication error: No user returned',
+        isError: true,
       );
       return;
     }
@@ -119,17 +115,16 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     if (!mounted) return;
 
     print('🔍 User details found: $userDetails');
-    
+
     if (userDetails == null ||
         userDetails['username'] == null ||
         userDetails['username'].toString().isEmpty) {
       // ✅ New user or incomplete profile - go to user details page
       print('📝 New user detected - navigating to User Details');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Welcome ${user.displayName ?? user.email}! Please complete your profile.'),
-          backgroundColor: Colors.green,
-        ),
+      _showCustomSnackBar(
+        context,
+        'Welcome ${user.displayName ?? user.email}! Please complete your profile.',
+        isSuccess: true,
       );
       Navigator.pushReplacement(
         context,
@@ -140,14 +135,73 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     } else {
       // ✅ Existing user with complete profile - go directly to home
       print('🏠 Existing user detected - going to Home');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Welcome back, ${userDetails['username']}!'),
-          backgroundColor: Colors.blue,
-        ),
+      _showCustomSnackBar(
+        context,
+        'Welcome back, ${userDetails['username']}!',
+        isSuccess: true,
       );
       Navigator.pushNamedAndRemoveUntil(context, '/home', (r) => false);
     }
+  }
+
+  void _showCustomSnackBar(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+    bool isSuccess = false,
+    bool isWarning = false,
+  }) {
+    Color backgroundColor;
+    Color textColor = Colors.white;
+    IconData icon;
+
+    if (isError) {
+      backgroundColor = const Color(0xFFE74C3C);
+      icon = Icons.error_outline;
+    } else if (isSuccess) {
+      backgroundColor = const Color(0xFF27AE60);
+      icon = Icons.check_circle_outline;
+    } else if (isWarning) {
+      backgroundColor = const Color(0xFFF39C12);
+      icon = Icons.warning_amber_outlined;
+    } else {
+      backgroundColor = const Color(0xFF6C5CE7);
+      icon = Icons.info_outline;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(icon, color: textColor, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: backgroundColor,
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        elevation: 8,
+        action: SnackBarAction(
+          label: 'OK',
+          textColor: textColor,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -253,9 +307,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                             ),
                             child:
                                 _loading
-                                    ? const CircularProgressIndicator(
-                                      color: Color(0xFF101418),
-                                    )
+                                    ? const RoomieLoadingSmall(size: 24)
                                     : const Text(
                                       'Sign up with Phone',
                                       style: TextStyle(
@@ -321,7 +373,9 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                                 borderRadius: BorderRadius.circular(32),
                               ),
                               elevation: 2,
-                              shadowColor: const Color(0xFF4285F4).withOpacity(0.3),
+                              shadowColor: const Color(
+                                0xFF4285F4,
+                              ).withValues(alpha: 0.3),
                               padding: const EdgeInsets.only(left: 0),
                             ),
                           ),

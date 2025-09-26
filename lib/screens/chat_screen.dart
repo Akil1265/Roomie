@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:roomie/services/auth_service.dart';
 import 'package:roomie/services/chat_service.dart';
+import 'package:roomie/widgets/roomie_loading_widget.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:roomie/services/cloudinary_service.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ChatScreen extends StatefulWidget {
   final Map<String, dynamic> chatData;
   final String chatType; // 'group' or 'individual'
 
-  const ChatScreen({
-    super.key,
-    required this.chatData,
-    required this.chatType,
-  });
+  const ChatScreen({super.key, required this.chatData, required this.chatType});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -21,8 +22,11 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final ChatService _chatService = ChatService();
   final AuthService _authService = AuthService();
+  final ImagePicker _imagePicker = ImagePicker();
+  final CloudinaryService _cloudinaryService = CloudinaryService();
   bool _isInitialized = false;
   String? _chatId;
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
@@ -32,25 +36,28 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _initializeChat() async {
     if (_isInitialized) return;
-    
+
     print('🔄 Initializing chat: type=${widget.chatType}');
     print('📋 Chat data: ${widget.chatData}');
-    
+
     try {
       if (widget.chatType == 'group') {
         // Initialize group chat
         final groupId = widget.chatData['id'];
         final groupName = widget.chatData['name'] ?? 'Group Chat';
         final members = List<String>.from(widget.chatData['members'] ?? []);
-        
-        print('👥 Group chat - ID: $groupId, Name: $groupName, Members: $members');
-        
+
+        print(
+          '👥 Group chat - ID: $groupId, Name: $groupName, Members: $members',
+        );
+
         // Create member names map
         final memberNames = <String, String>{};
         for (String memberId in members) {
-          memberNames[memberId] = 'Member'; // You can enhance this to fetch actual names
+          memberNames[memberId] =
+              'Member'; // You can enhance this to fetch actual names
         }
-        
+
         await _chatService.createOrGetGroupChat(
           groupId: groupId,
           groupName: groupName,
@@ -63,10 +70,13 @@ class _ChatScreenState extends State<ChatScreen> {
         // Initialize individual chat
         final otherUserId = widget.chatData['id'] ?? widget.chatData['userId'];
         final otherUserName = widget.chatData['name'] ?? 'User';
-        final otherUserImageUrl = widget.chatData['imageUrl'] ?? widget.chatData['profileImageUrl'];
-        
-        print('👤 Individual chat - Other user ID: $otherUserId, Name: $otherUserName');
-        
+        final otherUserImageUrl =
+            widget.chatData['imageUrl'] ?? widget.chatData['profileImageUrl'];
+
+        print(
+          '👤 Individual chat - Other user ID: $otherUserId, Name: $otherUserName',
+        );
+
         final currentUser = _authService.currentUser;
         if (currentUser != null) {
           _chatId = await _chatService.createOrGetChat(
@@ -79,7 +89,7 @@ class _ChatScreenState extends State<ChatScreen> {
           print('❌ Current user is null');
         }
       }
-      
+
       setState(() {
         _isInitialized = true;
       });
@@ -95,6 +105,239 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
+  Future<void> _pickAndSendImage() async {
+    if (_chatId == null) return;
+
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        setState(() => _isUploadingImage = true);
+
+        String? imageUrl;
+
+        if (kIsWeb) {
+          final bytes = await image.readAsBytes();
+          imageUrl = await _cloudinaryService.uploadBytes(
+            bytes: bytes,
+            fileName: 'chat_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
+            folder: CloudinaryFolder.other,
+          );
+        } else {
+          imageUrl = await _cloudinaryService.uploadFile(
+            file: File(image.path),
+            folder: CloudinaryFolder.other,
+          );
+        }
+
+        // Send image URL as message
+        if (widget.chatType == 'group') {
+          await _chatService.sendGroupMessage(
+            groupId: _chatId!,
+            message: imageUrl ?? '',
+          );
+        } else {
+          await _chatService.sendMessage(
+            chatId: _chatId!,
+            message: imageUrl ?? '',
+          );
+        }
+
+        _scrollToBottom();
+      }
+    } catch (e) {
+      print('❌ Error sending image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingImage = false);
+    }
+  }
+
+  Future<void> _takePhotoAndSend() async {
+    if (_chatId == null) return;
+
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        setState(() => _isUploadingImage = true);
+
+        String? imageUrl;
+
+        if (kIsWeb) {
+          final bytes = await image.readAsBytes();
+          imageUrl = await _cloudinaryService.uploadBytes(
+            bytes: bytes,
+            fileName: 'chat_photo_${DateTime.now().millisecondsSinceEpoch}.jpg',
+            folder: CloudinaryFolder.other,
+          );
+        } else {
+          imageUrl = await _cloudinaryService.uploadFile(
+            file: File(image.path),
+            folder: CloudinaryFolder.other,
+          );
+        }
+
+        // Send image URL as message
+        if (widget.chatType == 'group') {
+          await _chatService.sendGroupMessage(
+            groupId: _chatId!,
+            message: imageUrl ?? '',
+          );
+        } else {
+          await _chatService.sendMessage(
+            chatId: _chatId!,
+            message: imageUrl ?? '',
+          );
+        }
+
+        _scrollToBottom();
+      }
+    } catch (e) {
+      print('❌ Error taking photo: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to take photo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingImage = false);
+    }
+  }
+
+  void _showImageSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Select Image Source',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF121417),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Camera option
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      _takePhotoAndSend();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF007AFF).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFF007AFF).withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: const Column(
+                        children: [
+                          Icon(
+                            Icons.camera_alt,
+                            size: 40,
+                            color: Color(0xFF007AFF),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Camera',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF007AFF),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Gallery option
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickAndSendImage();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF34C759).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFF34C759).withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: const Column(
+                        children: [
+                          Icon(
+                            Icons.photo_library,
+                            size: 40,
+                            color: Color(0xFF34C759),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Gallery',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF34C759),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _sendMessage() async {
     final messageText = _messageController.text.trim();
     if (messageText.isEmpty || _chatId == null) {
@@ -108,7 +351,9 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
-    print('📤 Sending message: type=${widget.chatType}, chatId=$_chatId, message=$messageText');
+    print(
+      '📤 Sending message: type=${widget.chatType}, chatId=$_chatId, message=$messageText',
+    );
 
     try {
       if (widget.chatType == 'group') {
@@ -118,10 +363,7 @@ class _ChatScreenState extends State<ChatScreen> {
         );
         print('✅ Group message sent successfully');
       } else {
-        await _chatService.sendMessage(
-          chatId: _chatId!,
-          message: messageText,
-        );
+        await _chatService.sendMessage(chatId: _chatId!, message: messageText);
         print('✅ Individual message sent successfully');
       }
 
@@ -174,7 +416,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildGroupInfoSheet() {
     final group = widget.chatData;
     final members = List<String>.from(group['members'] ?? []);
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -197,19 +439,24 @@ class _ChatScreenState extends State<ChatScreen> {
               CircleAvatar(
                 radius: 30,
                 backgroundColor: const Color(0xFF007AFF),
-                backgroundImage: group['imageUrl'] != null 
-                    ? NetworkImage(group['imageUrl']) 
-                    : null,
-                child: group['imageUrl'] == null
-                    ? Text(
-                        (group['name'] as String?)?.substring(0, 1).toUpperCase() ?? 'G',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    : null,
+                backgroundImage:
+                    group['imageUrl'] != null
+                        ? NetworkImage(group['imageUrl'])
+                        : null,
+                child:
+                    group['imageUrl'] == null
+                        ? Text(
+                          (group['name'] as String?)
+                                  ?.substring(0, 1)
+                                  .toUpperCase() ??
+                              'G',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                        : null,
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -237,7 +484,8 @@ class _ChatScreenState extends State<ChatScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          if (group['description'] != null && group['description'].isNotEmpty) ...[
+          if (group['description'] != null &&
+              group['description'].isNotEmpty) ...[
             const Text(
               'Description',
               style: TextStyle(
@@ -267,10 +515,15 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           const SizedBox(height: 12),
           _buildInfoRow(Icons.people, 'Members', '${members.length}'),
-          _buildInfoRow(Icons.calendar_today, 'Created', 
-              group['createdAt'] != null 
-                  ? _formatDate(DateTime.fromMillisecondsSinceEpoch(group['createdAt']))
-                  : 'Unknown'),
+          _buildInfoRow(
+            Icons.calendar_today,
+            'Created',
+            group['createdAt'] != null
+                ? _formatDate(
+                  DateTime.fromMillisecondsSinceEpoch(group['createdAt']),
+                )
+                : 'Unknown',
+          ),
           const SizedBox(height: 20),
         ],
       ),
@@ -279,7 +532,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildPersonInfoSheet() {
     final person = widget.chatData;
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -302,19 +555,24 @@ class _ChatScreenState extends State<ChatScreen> {
               CircleAvatar(
                 radius: 30,
                 backgroundColor: const Color(0xFF007AFF),
-                backgroundImage: person['profileImageUrl'] != null 
-                    ? NetworkImage(person['profileImageUrl']) 
-                    : null,
-                child: person['profileImageUrl'] == null
-                    ? Text(
-                        (person['name'] as String?)?.substring(0, 1).toUpperCase() ?? 'U',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    : null,
+                backgroundImage:
+                    person['profileImageUrl'] != null
+                        ? NetworkImage(person['profileImageUrl'])
+                        : null,
+                child:
+                    person['profileImageUrl'] == null
+                        ? Text(
+                          (person['name'] as String?)
+                                  ?.substring(0, 1)
+                                  .toUpperCase() ??
+                              'U',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                        : null,
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -353,14 +611,19 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          if (person['phone'] != null) 
+          if (person['phone'] != null)
             _buildInfoRow(Icons.phone, 'Phone', person['phone']),
-          if (person['email'] != null) 
+          if (person['email'] != null)
             _buildInfoRow(Icons.email, 'Email', person['email']),
-          _buildInfoRow(Icons.calendar_today, 'Joined', 
-              person['createdAt'] != null 
-                  ? _formatDate(DateTime.fromMillisecondsSinceEpoch(person['createdAt']))
-                  : 'Unknown'),
+          _buildInfoRow(
+            Icons.calendar_today,
+            'Joined',
+            person['createdAt'] != null
+                ? _formatDate(
+                  DateTime.fromMillisecondsSinceEpoch(person['createdAt']),
+                )
+                : 'Unknown',
+          ),
           const SizedBox(height: 20),
         ],
       ),
@@ -372,11 +635,7 @@ class _ChatScreenState extends State<ChatScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 20,
-            color: const Color(0xFF677583),
-          ),
+          Icon(icon, size: 20, color: const Color(0xFF677583)),
           const SizedBox(width: 12),
           Text(
             label,
@@ -389,10 +648,7 @@ class _ChatScreenState extends State<ChatScreen> {
           const Spacer(),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF677583),
-            ),
+            style: const TextStyle(fontSize: 14, color: Color(0xFF677583)),
           ),
         ],
       ),
@@ -401,8 +657,18 @@ class _ChatScreenState extends State<ChatScreen> {
 
   String _formatDate(DateTime dateTime) {
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${dateTime.day} ${months[dateTime.month - 1]} ${dateTime.year}';
   }
@@ -419,19 +685,24 @@ class _ChatScreenState extends State<ChatScreen> {
       leadingAvatar = CircleAvatar(
         radius: 20,
         backgroundColor: const Color(0xFF007AFF),
-        backgroundImage: widget.chatData['imageUrl'] != null 
-            ? NetworkImage(widget.chatData['imageUrl']) 
-            : null,
-        child: widget.chatData['imageUrl'] == null
-            ? Text(
-                (widget.chatData['name'] as String?)?.substring(0, 1).toUpperCase() ?? 'G',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              )
-            : null,
+        backgroundImage:
+            widget.chatData['imageUrl'] != null
+                ? NetworkImage(widget.chatData['imageUrl'])
+                : null,
+        child:
+            widget.chatData['imageUrl'] == null
+                ? Text(
+                  (widget.chatData['name'] as String?)
+                          ?.substring(0, 1)
+                          .toUpperCase() ??
+                      'G',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                )
+                : null,
       );
     } else {
       title = widget.chatData['name'] ?? 'Chat';
@@ -439,19 +710,24 @@ class _ChatScreenState extends State<ChatScreen> {
       leadingAvatar = CircleAvatar(
         radius: 20,
         backgroundColor: const Color(0xFF007AFF),
-        backgroundImage: widget.chatData['profileImageUrl'] != null 
-            ? NetworkImage(widget.chatData['profileImageUrl']) 
-            : null,
-        child: widget.chatData['profileImageUrl'] == null
-            ? Text(
-                (widget.chatData['name'] as String?)?.substring(0, 1).toUpperCase() ?? 'U',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              )
-            : null,
+        backgroundImage:
+            widget.chatData['profileImageUrl'] != null
+                ? NetworkImage(widget.chatData['profileImageUrl'])
+                : null,
+        child:
+            widget.chatData['profileImageUrl'] == null
+                ? Text(
+                  (widget.chatData['name'] as String?)
+                          ?.substring(0, 1)
+                          .toUpperCase() ??
+                      'U',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                )
+                : null,
       );
     }
 
@@ -464,10 +740,7 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             IconButton(
               onPressed: () => Navigator.pop(context),
-              icon: const Icon(
-                Icons.arrow_back,
-                color: Color(0xFF121417),
-              ),
+              icon: const Icon(Icons.arrow_back, color: Color(0xFF121417)),
             ),
           ],
         ),
@@ -504,10 +777,7 @@ class _ChatScreenState extends State<ChatScreen> {
         actions: [
           IconButton(
             onPressed: _showChatInfo,
-            icon: const Icon(
-              Icons.info_outline,
-              color: Color(0xFF121417),
-            ),
+            icon: const Icon(Icons.info_outline, color: Color(0xFF121417)),
           ),
         ],
       ),
@@ -516,22 +786,39 @@ class _ChatScreenState extends State<ChatScreen> {
           // Messages List
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _isInitialized && _chatId != null
-                  ? (widget.chatType == 'group'
-                      ? _chatService.getGroupMessagesStream(_chatId!)
-                      : _chatService.getMessagesStream(_chatId!).map((messages) => 
-                          messages.map((msg) => {
-                            'senderId': msg.senderId,
-                            'senderName': msg.senderName,
-                            'message': msg.message,
-                            'timestamp': msg.timestamp.millisecondsSinceEpoch,
-                            'isSystemMessage': false,
-                          }).toList()))
-                  : Stream.value([]),
+              stream:
+                  _isInitialized && _chatId != null
+                      ? (widget.chatType == 'group'
+                          ? _chatService.getGroupMessagesStream(_chatId!)
+                          : _chatService
+                              .getMessagesStream(_chatId!)
+                              .map(
+                                (messages) =>
+                                    messages
+                                        .map(
+                                          (msg) => {
+                                            'senderId': msg.senderId,
+                                            'senderName': msg.senderName,
+                                            'message': msg.message,
+                                            'timestamp':
+                                                msg
+                                                    .timestamp
+                                                    .millisecondsSinceEpoch,
+                                            'isSystemMessage': false,
+                                          },
+                                        )
+                                        .toList(),
+                              ))
+                      : Stream.value([]),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting || !_isInitialized) {
+                if (snapshot.connectionState == ConnectionState.waiting ||
+                    !_isInitialized) {
                   return const Center(
-                    child: CircularProgressIndicator(),
+                    child: RoomieLoadingWidget(
+                      size: 60,
+                      showText: true,
+                      text: 'Loading messages...',
+                    ),
                   );
                 }
 
@@ -575,15 +862,15 @@ class _ChatScreenState extends State<ChatScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          widget.chatType == 'group' 
-                              ? Icons.group_outlined 
+                          widget.chatType == 'group'
+                              ? Icons.group_outlined
                               : Icons.chat_bubble_outline,
                           size: 48,
                           color: const Color(0xFF677583),
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          widget.chatType == 'group' 
+                          widget.chatType == 'group'
                               ? 'No messages in group yet'
                               : 'No messages yet',
                           style: const TextStyle(
@@ -632,15 +919,67 @@ class _ChatScreenState extends State<ChatScreen> {
             decoration: const BoxDecoration(
               color: Colors.white,
               border: Border(
-                top: BorderSide(
-                  color: Color(0xFFE5E5EA),
-                  width: 0.5,
-                ),
+                top: BorderSide(color: Color(0xFFE5E5EA), width: 0.5),
               ),
             ),
             child: SafeArea(
               child: Row(
                 children: [
+                  // Camera button
+                  Container(
+                    width: 44,
+                    height: 44,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF2F2F7),
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    child: IconButton(
+                      onPressed: _isUploadingImage ? null : _takePhotoAndSend,
+                      icon:
+                          _isUploadingImage
+                              ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Icon(
+                                Icons.camera_alt,
+                                color: Color(0xFF007AFF),
+                                size: 22,
+                              ),
+                    ),
+                  ),
+                  // Attachment button (gallery + camera options)
+                  Container(
+                    width: 44,
+                    height: 44,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF2F2F7),
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    child: IconButton(
+                      onPressed:
+                          _isUploadingImage ? null : _showImageSourceDialog,
+                      icon:
+                          _isUploadingImage
+                              ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Icon(
+                                Icons.attach_file,
+                                color: Color(0xFF677583),
+                                size: 22,
+                              ),
+                    ),
+                  ),
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
@@ -701,10 +1040,21 @@ class _ChatScreenState extends State<ChatScreen> {
     final currentUser = _authService.currentUser;
     final isMyMessage = messageData['senderId'] == currentUser?.uid;
     final isSystemMessage = messageData['isSystemMessage'] == true;
+    final message = messageData['message'] ?? '';
     final timestamp = messageData['timestamp'] as int?;
-    final timeString = timestamp != null
-        ? _formatTime(DateTime.fromMillisecondsSinceEpoch(timestamp))
-        : '';
+    final timeString =
+        timestamp != null
+            ? _formatTime(DateTime.fromMillisecondsSinceEpoch(timestamp))
+            : '';
+
+    // Check if message is an image URL
+    final isImage =
+        message.startsWith('https://res.cloudinary.com') ||
+        message.toLowerCase().contains('.jpg') ||
+        message.toLowerCase().contains('.png') ||
+        message.toLowerCase().contains('.gif') ||
+        message.toLowerCase().contains('.jpeg') ||
+        message.toLowerCase().contains('.webp');
 
     // System messages (like welcome messages)
     if (isSystemMessage) {
@@ -712,10 +1062,7 @@ class _ChatScreenState extends State<ChatScreen> {
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Center(
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 6,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: Colors.grey[100],
               borderRadius: BorderRadius.circular(12),
@@ -746,7 +1093,10 @@ class _ChatScreenState extends State<ChatScreen> {
               radius: 16,
               backgroundColor: const Color(0xFF007AFF),
               child: Text(
-                (messageData['senderName'] as String?)?.substring(0, 1).toUpperCase() ?? 'U',
+                (messageData['senderName'] as String?)
+                        ?.substring(0, 1)
+                        .toUpperCase() ??
+                    'U',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
@@ -761,14 +1111,9 @@ class _ChatScreenState extends State<ChatScreen> {
               constraints: BoxConstraints(
                 maxWidth: MediaQuery.of(context).size.width * 0.75,
               ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: isMyMessage
-                    ? const Color(0xFF007AFF)
-                    : Colors.white,
+                color: isMyMessage ? const Color(0xFF007AFF) : Colors.white,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(18),
                   topRight: const Radius.circular(18),
@@ -797,23 +1142,68 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     const SizedBox(height: 4),
                   ],
-                  Text(
-                    messageData['message'] ?? '',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isMyMessage ? Colors.white : const Color(0xFF121417),
-                      height: 1.3,
+                  // Display image or text
+                  if (isImage)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        message,
+                        fit: BoxFit.cover,
+                        width: 200,
+                        height: 200,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            width: 200,
+                            height: 200,
+                            color: Colors.grey[200],
+                            child: Center(
+                              child: RoomieLoadingWidget(
+                                size: 50,
+                                showText: true,
+                                text: 'Setting up chat...',
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 200,
+                            height: 200,
+                            color: Colors.grey[200],
+                            child: const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.broken_image, size: 50),
+                                Text('Failed to load image'),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    )
+                  else
+                    Text(
+                      message,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color:
+                            isMyMessage
+                                ? Colors.white
+                                : const Color(0xFF121417),
+                        height: 1.3,
+                      ),
                     ),
-                  ),
                   if (timeString.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
                       timeString,
                       style: TextStyle(
                         fontSize: 11,
-                        color: isMyMessage
-                            ? Colors.white.withValues(alpha: 0.7)
-                            : const Color(0xFF677583),
+                        color:
+                            isMyMessage
+                                ? Colors.white.withValues(alpha: 0.7)
+                                : const Color(0xFF677583),
                       ),
                     ),
                   ],
@@ -827,7 +1217,10 @@ class _ChatScreenState extends State<ChatScreen> {
               radius: 16,
               backgroundColor: const Color(0xFF34C759),
               child: Text(
-                (messageData['senderName'] as String?)?.substring(0, 1).toUpperCase() ?? 'M',
+                (messageData['senderName'] as String?)
+                        ?.substring(0, 1)
+                        .toUpperCase() ??
+                    'M',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,

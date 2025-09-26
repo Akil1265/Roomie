@@ -5,10 +5,27 @@ import 'package:roomie/screens/login_s.dart';
 import 'package:roomie/screens/home_s.dart';
 import 'package:roomie/screens/user_profile_s.dart';
 import 'package:roomie/widgets/auth_wrapper.dart';
+import 'package:roomie/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Initialize Firebase with error handling
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    // Firebase already initialized, continue
+    print('Firebase initialization: $e');
+  }
+
+  // Initialize notifications
+  try {
+    await NotificationService().initialize();
+  } catch (e) {
+    print('Error initializing notifications: $e');
+  }
 
   print('🚀 Starting Roomie App (Firestore + Cloudinary mode)...');
 
@@ -28,7 +45,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const AuthWrapper(),
         '/home': (context) => const HomeScreen(),
         '/login': (context) => const PhoneLoginScreen(),
-        '/profile': (context) => const UserProfileScreen()
+        '/profile': (context) => const UserProfileScreen(),
       },
       theme: ThemeData(
         primaryColor: const Color(0xFF121417),
