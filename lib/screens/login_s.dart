@@ -57,9 +57,10 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     try {
       print('🔄 Login: Starting Google authentication...');
       final result = await authService.signInWithGoogle();
-      setState(() => _loading = false);
 
       if (!mounted) return;
+
+      setState(() => _loading = false);
 
       print('🔄 Google auth result: ${result.status}');
 
@@ -92,9 +93,11 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       }
     } catch (e) {
       print('🚨 Exception in Google auth: $e');
-      setState(() => _loading = false);
-      if (!mounted) return;
-      _showCustomSnackBar(context, 'Authentication error: $e', isError: true);
+      if (mounted) {
+        setState(() => _loading = false);
+        _showCustomSnackBar(context, 'Authentication error: $e', isError: true);
+      }
+      return;
     }
   }
 

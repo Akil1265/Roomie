@@ -1,7 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, TargetPlatform, defaultTargetPlatform;
 import 'package:google_sign_in/google_sign_in.dart';
 
 enum GoogleSignInStatus { success, cancelled, popupClosed, error }
@@ -66,38 +67,54 @@ class AuthService {
           'include_granted_scopes': 'true',
         });
         userCredential = await _auth.signInWithPopup(googleProvider);
-      } else {
-        // For mobile, use Google Sign-In package
-        final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
+      } else if (_isMobilePlatform()) {
+        // For mobile platforms - use google_sign_in package for native account picker
+        print('🔄 Login: Starting mobile Google Sign-In...');
 
-        print('🔄 Starting Google Sign-In flow...');
+        final GoogleSignIn googleSignIn = GoogleSignIn(
+          scopes: <String>['email', 'profile'],
+        );
 
-        // ✅ ALWAYS sign out first to force account picker every time
-        await googleSignIn.signOut();
-        print('🔄 Signed out - forcing account selection...');
+        // Ensure the native account picker is shown each time
+        try {
+          await googleSignIn.signOut();
+        } catch (signOutError) {
+          print('⚠️ Google sign-out before sign-in failed: $signOutError');
+        }
 
-        // Trigger the authentication flow - this will ALWAYS show account picker
+        // Sign in with Google - this shows the native account picker
         final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
         if (googleUser == null) {
-          print('🚫 User cancelled Google sign-in');
+          // User cancelled the sign-in
           return const GoogleSignInResult(GoogleSignInStatus.cancelled);
         }
 
-        print('✅ Google account selected: ${googleUser.email}');
-
-        // Obtain the auth details from the request
+        // Get authentication details
         final GoogleSignInAuthentication googleAuth =
             await googleUser.authentication;
 
-        // Create a new credential
+        // Create credential for Firebase
         final credential = GoogleAuthProvider.credential(
-          idToken: googleAuth.idToken,
           accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
         );
 
-        // Sign in to Firebase with the Google credential
+        // Sign in to Firebase with the credential
         userCredential = await _auth.signInWithCredential(credential);
+
+        print('🔄 Login: Google Sign-In successful');
+      } else {
+        // Desktop or unsupported platforms fall back to Firebase provider flow
+        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+        googleProvider.addScope('email');
+        googleProvider.addScope('profile');
+        googleProvider.setCustomParameters({
+          'prompt': 'select_account',
+          'include_granted_scopes': 'true',
+        });
+
+        userCredential = await _auth.signInWithProvider(googleProvider);
       }
 
       final user = userCredential.user;
@@ -163,6 +180,11 @@ class AuthService {
     } finally {
       _signingIn = false;
     }
+  }
+
+  bool _isMobilePlatform() {
+    return defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
   }
 
   Future<void> sendOTP({
@@ -260,12 +282,6 @@ class AuthService {
   ///  Sign out from Firebase Auth and Google Sign-In
   Future<void> signOut() async {
     try {
-      // Sign out from Google Sign-In if not on web
-      if (!kIsWeb) {
-        final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
-        await googleSignIn.signOut();
-      }
-
       // Sign out from Firebase Auth
       await _auth.signOut();
       print('✅ Successfully signed out');
