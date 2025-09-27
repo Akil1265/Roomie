@@ -79,9 +79,9 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
   final _descriptionController = TextEditingController();
 
   final ImagePicker _picker = ImagePicker();
-  File? _selectedImage;
-  String? _webImagePath;
-  XFile? _webImageFile;
+  final List<File> _selectedImages = [];
+  final List<XFile> _webImageFiles = [];
+  final List<Uint8List> _webImageBytes = [];
   bool _isLoading = false;
   final GroupsService _groupsService = GroupsService();
   final EnhancedGeocodingService _geocodingService = EnhancedGeocodingService();
@@ -157,29 +157,73 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     'Balcony',
   ];
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImages() async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 800,
-        maxHeight: 600,
-        imageQuality: 85,
-      );
+      List<XFile> pickedImages = [];
 
-      if (image != null) {
-        setState(() {
-          if (kIsWeb) {
-            _webImagePath = image.path;
-            _webImageFile = image;
-            _selectedImage = null;
-          } else {
-            _selectedImage = File(image.path);
-            _webImagePath = null;
-            _webImageFile = null;
+      try {
+        pickedImages = await _picker.pickMultiImage(
+          maxWidth: 800,
+          maxHeight: 600,
+          imageQuality: 85,
+        );
+      } catch (error) {
+        if (error is UnimplementedError || error is UnsupportedError) {
+          final XFile? singleImage = await _picker.pickImage(
+            source: ImageSource.gallery,
+            maxWidth: 800,
+            maxHeight: 600,
+            imageQuality: 85,
+          );
+          if (singleImage != null) {
+            pickedImages = [singleImage];
           }
-        });
-        print('Image selected: ${image.path}');
+        } else {
+          rethrow;
+        }
       }
+
+      if (pickedImages.isEmpty) {
+        return;
+      }
+
+      const int maxImagesAllowed = 6;
+      final bool exceededLimit = pickedImages.length > maxImagesAllowed;
+      final List<XFile> limitedImages =
+          pickedImages.take(maxImagesAllowed).toList();
+
+      if (kIsWeb) {
+        final List<Uint8List> bytesList = [];
+        for (final image in limitedImages) {
+          bytesList.add(await image.readAsBytes());
+        }
+
+        setState(() {
+          _webImageFiles
+            ..clear()
+            ..addAll(limitedImages);
+          _webImageBytes
+            ..clear()
+            ..addAll(bytesList);
+          _selectedImages.clear();
+        });
+      } else {
+        setState(() {
+          _selectedImages
+            ..clear()
+            ..addAll(limitedImages.map((image) => File(image.path)));
+          _webImageFiles.clear();
+          _webImageBytes.clear();
+        });
+      }
+
+      if (exceededLimit && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You can upload up to 6 images only.')),
+        );
+      }
+
+      print('Images selected: ${limitedImages.length}');
     } catch (e) {
       print('Error picking image: $e');
       if (mounted) {
@@ -188,6 +232,40 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
         ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
       }
     }
+  }
+
+  bool get _hasSelectedImages =>
+      _selectedImages.isNotEmpty || _webImageFiles.isNotEmpty;
+
+  File? get _primaryLocalImage =>
+      _selectedImages.isNotEmpty ? _selectedImages.first : null;
+
+  Uint8List? get _primaryWebImageBytes =>
+      _webImageBytes.isNotEmpty ? _webImageBytes.first : null;
+
+  Widget _buildPrimaryImagePreview() {
+    if (kIsWeb && _primaryWebImageBytes != null) {
+      return Image.memory(
+        _primaryWebImageBytes!,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
+
+    if (_primaryLocalImage != null) {
+      return Image.file(
+        _primaryLocalImage!,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
+
+    return Container(
+      color: Colors.grey[300],
+      child: const Icon(Icons.error, color: Colors.grey),
+    );
   }
 
   // Get current position
@@ -396,6 +474,13 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       return;
     }
 
+    if (_selectedImages.isEmpty && _webImageFiles.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please upload at least one image')),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -413,8 +498,8 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
         memberCount: 1, // Creator is the first member
         maxMembers: capacity,
         rent: rentAmount,
-        imageFile: _selectedImage,
-        webPicked: _webImageFile,
+        imageFiles: _selectedImages,
+        webPickedFiles: _webImageFiles,
       );
 
       if (groupId != null) {
@@ -591,50 +676,19 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                         ),
                       ),
                       child:
-                          (_selectedImage != null || _webImagePath != null)
+                          _hasSelectedImages
                               ? ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
                                 child: Stack(
                                   children: [
-                                    kIsWeb && _webImagePath != null
-                                        ? Image.network(
-                                          _webImagePath!,
-                                          fit: BoxFit.cover,
-                                          width: double.infinity,
-                                          height: double.infinity,
-                                          errorBuilder: (
-                                            context,
-                                            error,
-                                            stackTrace,
-                                          ) {
-                                            return Container(
-                                              color: Colors.grey[300],
-                                              child: const Icon(
-                                                Icons.error,
-                                                color: Colors.grey,
-                                              ),
-                                            );
-                                          },
-                                        )
-                                        : _selectedImage != null
-                                        ? Image.file(
-                                          _selectedImage!,
-                                          fit: BoxFit.cover,
-                                          width: double.infinity,
-                                          height: double.infinity,
-                                        )
-                                        : Container(
-                                          color: Colors.grey[300],
-                                          child: const Icon(
-                                            Icons.error,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
+                                    Positioned.fill(
+                                      child: _buildPrimaryImagePreview(),
+                                    ),
                                     Positioned(
                                       top: 8,
                                       right: 8,
                                       child: GestureDetector(
-                                        onTap: _pickImage,
+                                        onTap: _pickImages,
                                         child: Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
@@ -657,7 +711,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                                 ),
                               )
                               : GestureDetector(
-                                onTap: _pickImage,
+                                onTap: _pickImages,
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
