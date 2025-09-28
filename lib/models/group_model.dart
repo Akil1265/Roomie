@@ -137,21 +137,49 @@ class CoordinatesData {
 class RentData {
   final double amount;
   final String currency;
+  final double advanceAmount;
 
-  RentData({required this.amount, required this.currency});
+  const RentData({
+    required this.amount,
+    required this.currency,
+    required this.advanceAmount,
+  });
 
   factory RentData.fromMap(Map<String, dynamic> map) {
     return RentData(
       amount: (map['amount'] ?? 0.0).toDouble(),
       currency: map['currency'] ?? 'INR',
+      advanceAmount: (map['advanceAmount'] ?? 0.0).toDouble(),
     );
   }
 
   Map<String, dynamic> toMap() {
-    return {'amount': amount, 'currency': currency};
+    return {
+      'amount': amount,
+      'currency': currency,
+      'advanceAmount': advanceAmount,
+    };
   }
 
-  String get displayRent => '₹${amount.toStringAsFixed(0)}/$currency';
+  String get _currencySymbol {
+    switch (currency.toUpperCase()) {
+      case 'USD':
+        return r'$';
+      case 'EUR':
+        return '€';
+      case 'INR':
+      default:
+        return '₹';
+    }
+  }
+
+  String get displayRent =>
+      '$_currencySymbol${amount.toStringAsFixed(0)}/month';
+
+  String get displayAdvance =>
+      advanceAmount > 0
+          ? '$_currencySymbol${advanceAmount.toStringAsFixed(0)} advance'
+          : 'No advance';
 }
 
 class MemberData {
@@ -254,6 +282,31 @@ class GroupModel {
   });
 
   factory GroupModel.fromMap(Map<String, dynamic> map, String id) {
+    final dynamic rentRaw = map['rent'];
+    double rentAmount = 0.0;
+    String rentCurrency = (map['rentCurrency'] ?? 'INR').toString();
+    double advanceAmount = (map['advanceAmount'] ?? 0.0).toDouble();
+
+    if (rentRaw is Map<String, dynamic>) {
+      rentAmount = (rentRaw['amount'] ?? rentAmount).toDouble();
+      rentCurrency = (rentRaw['currency'] ?? rentCurrency).toString();
+      advanceAmount = (rentRaw['advanceAmount'] ?? advanceAmount).toDouble();
+    } else if (rentRaw is num) {
+      rentAmount = rentRaw.toDouble();
+    }
+
+    if (map['rentAmount'] != null) {
+      rentAmount = (map['rentAmount'] as num).toDouble();
+    }
+
+    if (map['rentCurrency'] != null) {
+      rentCurrency = map['rentCurrency'].toString();
+    }
+
+    if (map['advanceAmount'] != null) {
+      advanceAmount = (map['advanceAmount'] as num).toDouble();
+    }
+
     return GroupModel(
       id: id,
       name: map['roomName'] ?? map['name'] ?? '',
@@ -263,7 +316,11 @@ class GroupModel {
       roomType: map['roomType'] ?? 'Shared',
       capacity: map['capacity'] ?? map['maxMembers'] ?? 4,
       currentMembers: map['currentMembers'] ?? map['memberCount'] ?? 0,
-      rent: RentData.fromMap(map['rent'] ?? {}),
+      rent: RentData(
+        amount: rentAmount,
+        currency: rentCurrency,
+        advanceAmount: advanceAmount,
+      ),
       amenities: List<String>.from(map['amenities'] ?? []),
       images: List<String>.from(map['images'] ?? []),
       createdBy: map['adminId'] ?? map['createdBy'] ?? '',
@@ -291,6 +348,9 @@ class GroupModel {
       'capacity': capacity,
       'currentMembers': currentMembers,
       'rent': rent.toMap(),
+      'rentAmount': rent.amount,
+      'rentCurrency': rent.currency,
+      'advanceAmount': rent.advanceAmount,
       'amenities': amenities,
       'images': images,
       'adminId': createdBy,
@@ -356,6 +416,8 @@ class GroupModel {
 
   String get displayRent => rent.displayRent;
 
+  String get displayAdvance => rent.displayAdvance;
+
   String get displayLocation => location.fullAddress;
 
   bool get hasPendingRequests => joinRequests.any((r) => r.isPending);
@@ -400,6 +462,9 @@ class GroupModel {
       'capacity': capacity,
       'currentMembers': currentMembers,
       'rent': rent.toMap(),
+      'rentAmount': rent.amount,
+      'rentCurrency': rent.currency,
+      'advanceAmount': rent.advanceAmount,
       'amenities': amenities,
       'images': images,
       'adminId': createdBy,
@@ -414,6 +479,31 @@ class GroupModel {
 
   /// Creates GroupModel from Firestore data
   factory GroupModel.fromFirestore(Map<String, dynamic> data, String id) {
+    final dynamic rentRaw = data['rent'];
+    double rentAmount = 0.0;
+    String rentCurrency = (data['rentCurrency'] ?? 'INR').toString();
+    double advanceAmount = (data['advanceAmount'] ?? 0.0).toDouble();
+
+    if (rentRaw is Map<String, dynamic>) {
+      rentAmount = (rentRaw['amount'] ?? rentAmount).toDouble();
+      rentCurrency = (rentRaw['currency'] ?? rentCurrency).toString();
+      advanceAmount = (rentRaw['advanceAmount'] ?? advanceAmount).toDouble();
+    } else if (rentRaw is num) {
+      rentAmount = rentRaw.toDouble();
+    }
+
+    if (data['rentAmount'] != null) {
+      rentAmount = (data['rentAmount'] as num).toDouble();
+    }
+
+    if (data['rentCurrency'] != null) {
+      rentCurrency = data['rentCurrency'].toString();
+    }
+
+    if (data['advanceAmount'] != null) {
+      advanceAmount = (data['advanceAmount'] as num).toDouble();
+    }
+
     return GroupModel(
       id: id,
       name: data['roomName'] ?? data['name'] ?? '',
@@ -423,7 +513,11 @@ class GroupModel {
       roomType: data['roomType'] ?? 'Shared',
       capacity: data['capacity'] ?? data['maxMembers'] ?? 4,
       currentMembers: data['currentMembers'] ?? data['memberCount'] ?? 0,
-      rent: RentData.fromMap(data['rent'] ?? {}),
+      rent: RentData(
+        amount: rentAmount,
+        currency: rentCurrency,
+        advanceAmount: advanceAmount,
+      ),
       amenities: List<String>.from(data['amenities'] ?? []),
       images: List<String>.from(data['images'] ?? []),
       createdBy: data['adminId'] ?? data['createdBy'] ?? '',

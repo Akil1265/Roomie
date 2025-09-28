@@ -5,11 +5,13 @@ import 'package:flutter/foundation.dart';
 import 'package:roomie/services/cloudinary_service.dart';
 import 'package:roomie/services/auth_service.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:roomie/services/notification_service.dart';
 
 class GroupsService {
   final _firestore = FirebaseFirestore.instance;
   final _realtimeDB = FirebaseDatabase.instance;
   final _cloudinary = CloudinaryService();
+  final _notificationService = NotificationService();
   static const String _collection = 'groups';
 
   Future<String?> createGroup({
@@ -18,16 +20,19 @@ class GroupsService {
     required String location,
     required int memberCount,
     required int maxMembers,
-    double? rent,
+    required double rentAmount,
+    required String rentCurrency,
+    required double advanceAmount,
+    required String roomType,
+    required List<String> amenities,
     List<File> imageFiles = const [],
     List<XFile> webPickedFiles = const [],
     File? imageFile,
-    XFile? webPicked, // for legacy single-image usage
+    XFile? webPicked,
   }) async {
     final user = AuthService().currentUser;
     if (user == null) throw Exception('Not authenticated');
 
-    // Check if user can create a group (not already in one)
     final canCreate = await canUserCreateGroup();
     if (!canCreate) {
       throw Exception('You can only create or join one group at a time');
@@ -76,6 +81,12 @@ class GroupsService {
       }
     }
 
+    final rentDetails = {
+      'amount': rentAmount,
+      'currency': rentCurrency,
+      'advanceAmount': advanceAmount,
+    };
+
     final data = {
       'id': docRef.id,
       'name': name.trim(),
@@ -83,7 +94,12 @@ class GroupsService {
       'location': location.trim(),
       'memberCount': memberCount,
       'maxMembers': maxMembers,
-      'rent': rent,
+      'rent': rentDetails,
+      'rentAmount': rentAmount,
+      'rentCurrency': rentCurrency,
+      'advanceAmount': advanceAmount,
+      'roomType': roomType,
+      'amenities': amenities,
       'imageUrl': imageUrls.isNotEmpty ? imageUrls.first : null,
       'images': imageUrls,
       'imageCount': imageUrls.length,
@@ -95,8 +111,6 @@ class GroupsService {
     };
 
     await docRef.set(data);
-
-    // Initialize group chat in Realtime Database
     await _updateGroupChatMembers(docRef.id);
 
     print('Group created successfully: ${docRef.id} for user: ${user.uid}');
@@ -187,40 +201,80 @@ class GroupsService {
     final user = AuthService().currentUser;
     if (user == null) return false;
 
-    // Check if user can join a group (not already in one)
-    final canJoin = await canUserCreateGroup();
-    if (!canJoin) {
-      throw Exception('You can only be in one group at a time');
+    final groupDoc = _firestore.collection(_collection).doc(groupId);
+    final groupSnapshot = await groupDoc.get();
+
+    if (!groupSnapshot.exists) {
+      throw Exception('Group not found');
     }
 
-    final ref = _firestore.collection(_collection).doc(groupId);
-    return _firestore
-        .runTransaction((tx) async {
-          final snap = await tx.get(ref);
-          if (!snap.exists) throw Exception('Group missing');
-          final data = snap.data()!;
-          final members = List<String>.from(data['members'] ?? []);
-          if (!members.contains(user.uid)) {
-            members.add(user.uid);
-            tx.update(ref, {
-              'members': members,
-              'memberCount': members.length,
-              'updatedAt': FieldValue.serverTimestamp(),
-            });
-          }
-          return true;
-        })
-        .then((result) async {
-          if (result) {
-            // Update group chat in Realtime Database
-            await _updateGroupChatMembers(groupId);
-          }
-          return result;
-        })
-        .catchError((e) {
-          print('Error joining group: $e');
-          return false;
-        });
+    final groupData = groupSnapshot.data()!;
+    final members = List<String>.from(groupData['members'] ?? []);
+    final maxMembers = groupData['maxMembers'] as int;
+
+    if (members.length >= maxMembers) {
+      throw Exception('Group is already full');
+    }
+
+    if (members.contains(user.uid)) {
+      throw Exception('You are already in this group');
+    }
+
+    await groupDoc.update({
+      'members': FieldValue.arrayUnion([user.uid]),
+      'memberCount': FieldValue.increment(1),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    await _updateGroupChatMembers(groupId);
+    return true;
+  }
+
+  Future<void> switchGroup({
+    required String userId,
+    required String currentGroupId,
+    required String newGroupId,
+  }) async {
+    final user = AuthService().currentUser;
+    if (user == null || user.uid != userId) {
+      throw Exception('Authentication error.');
+    }
+
+    final currentGroupRef = _firestore
+        .collection(_collection)
+        .doc(currentGroupId);
+    final newGroupRef = _firestore.collection(_collection).doc(newGroupId);
+
+    await _firestore.runTransaction((transaction) async {
+      // Get both group documents
+      final currentGroupSnap = await transaction.get(currentGroupRef);
+      final newGroupSnap = await transaction.get(newGroupRef);
+
+      if (!currentGroupSnap.exists) {
+        throw Exception('Your current group could not be found.');
+      }
+      if (!newGroupSnap.exists) {
+        throw Exception('The new group could not be found.');
+      }
+
+      // Leave the current group
+      transaction.update(currentGroupRef, {
+        'members': FieldValue.arrayRemove([userId]),
+        'memberCount': FieldValue.increment(-1),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Join the new group
+      transaction.update(newGroupRef, {
+        'members': FieldValue.arrayUnion([userId]),
+        'memberCount': FieldValue.increment(1),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    });
+
+    // Update real-time chat members for both groups
+    await _updateGroupChatMembers(currentGroupId);
+    await _updateGroupChatMembers(newGroupId);
   }
 
   Future<void> leaveGroup(String groupId) async {
@@ -267,7 +321,9 @@ class GroupsService {
     String? name,
     String? description,
     String? location,
-    double? rent,
+    double? rentAmount,
+    String? rentCurrency,
+    double? advanceAmount,
     File? newImageFile,
   }) async {
     final ref = _firestore.collection(_collection).doc(groupId);
@@ -277,7 +333,28 @@ class GroupsService {
     if (name != null) updates['name'] = name.trim();
     if (description != null) updates['description'] = description.trim();
     if (location != null) updates['location'] = location.trim();
-    if (rent != null) updates['rent'] = rent;
+    final rentUpdates = <String, dynamic>{};
+    if (rentAmount != null) {
+      rentUpdates['amount'] = rentAmount;
+      updates['rentAmount'] = rentAmount;
+    }
+    if (rentCurrency != null) {
+      rentUpdates['currency'] = rentCurrency;
+      updates['rentCurrency'] = rentCurrency;
+    }
+    if (advanceAmount != null) {
+      rentUpdates['advanceAmount'] = advanceAmount;
+      updates['advanceAmount'] = advanceAmount;
+    }
+
+    if (rentUpdates.isNotEmpty) {
+      final currentSnapshot = await ref.get();
+      final currentRent = Map<String, dynamic>.from(
+        (currentSnapshot.data()?['rent'] as Map<String, dynamic>?) ?? {},
+      );
+      final mergedRent = {...currentRent, ...rentUpdates};
+      updates['rent'] = mergedRent;
+    }
 
     if (newImageFile != null) {
       final url = await _cloudinary.uploadFile(
@@ -307,12 +384,6 @@ class GroupsService {
     if (user == null) return false;
 
     try {
-      // Check if user can join a group (not already in one)
-      final canJoin = await canUserCreateGroup();
-      if (!canJoin) {
-        throw Exception('You can only be in one group at a time');
-      }
-
       // Get user details
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
       final userData = userDoc.data() ?? {};
@@ -326,12 +397,42 @@ class GroupsService {
         'userName': userData['name'] ?? user.displayName ?? 'Unknown User',
         'userEmail': userData['email'] ?? user.email ?? '',
         'userPhone': userData['phone'] ?? '',
+        'userAge': userData['age'],
+        'userOccupation': userData['occupation'],
         'userProfileImage': userData['profileImageUrl'],
         'status': 'pending', // pending, approved, rejected
         'requestedAt': FieldValue.serverTimestamp(),
         'reviewedAt': null,
         'reviewedBy': null,
       });
+
+      // Notify all group members about the new request
+      final groupDocForNotify =
+          await _firestore.collection(_collection).doc(groupId).get();
+      final groupDataForNotify = groupDocForNotify.data();
+      if (groupDataForNotify != null) {
+        final groupMembers = List<String>.from(
+          groupDataForNotify['members'] ?? [],
+        );
+        final groupName = groupDataForNotify['name'] ?? 'your group';
+        for (final memberId in groupMembers) {
+          // Don't notify the user who sent the request
+          if (memberId == user.uid) continue;
+
+          await _notificationService.sendUserNotification(
+            userId: memberId,
+            title: 'New Join Request',
+            body:
+                '${userData['name'] ?? user.displayName ?? 'Someone'} requested to join "$groupName".',
+            type: 'join_request_received',
+            data: {
+              'groupId': groupId,
+              'requestId': requestRef.id,
+              'requesterId': user.uid,
+            },
+          );
+        }
+      }
 
       print('✅ Join request sent for group: $groupId');
       return true;
@@ -381,59 +482,100 @@ class GroupsService {
     if (currentUser == null) return false;
 
     try {
-      return await _firestore
-          .runTransaction((tx) async {
-            // Get the join request
-            final requestRef = _firestore
-                .collection('joinRequests')
-                .doc(requestId);
-            final requestSnap = await tx.get(requestRef);
+      // Get the group and request documents
+      final requestRef = _firestore.collection('joinRequests').doc(requestId);
+      final groupRef = _firestore.collection(_collection).doc(groupId);
 
-            if (!requestSnap.exists) throw Exception('Join request not found');
+      final requestSnap = await requestRef.get();
+      if (!requestSnap.exists) throw Exception('Join request not found');
 
-            // Get the group
-            final groupRef = _firestore.collection(_collection).doc(groupId);
-            final groupSnap = await tx.get(groupRef);
+      final groupSnap = await groupRef.get();
+      if (!groupSnap.exists) throw Exception('Group not found');
 
-            if (!groupSnap.exists) throw Exception('Group not found');
+      final groupData = groupSnap.data()!;
+      final members = List<String>.from(groupData['members'] ?? []);
 
-            final groupData = groupSnap.data()!;
-            final members = List<String>.from(groupData['members'] ?? []);
+      // Check if current user is a member of this group (can approve)
+      if (!members.contains(currentUser.uid)) {
+        throw Exception('You are not authorized to approve this request');
+      }
 
-            // Check if current user is a member of this group (can approve)
-            if (!members.contains(currentUser.uid)) {
-              throw Exception('You are not authorized to approve this request');
-            }
-
-            // Add user to group
-            if (!members.contains(userId)) {
-              members.add(userId);
-              tx.update(groupRef, {
-                'members': members,
-                'memberCount': members.length,
-                'updatedAt': FieldValue.serverTimestamp(),
-              });
-            }
-
-            // Update request status
-            tx.update(requestRef, {
-              'status': 'approved',
-              'reviewedAt': FieldValue.serverTimestamp(),
-              'reviewedBy': currentUser.uid,
+      // Check if the requesting user is already in a group
+      final requestingUserGroup = await _getUserGroup(userId);
+      if (requestingUserGroup != null) {
+        // User is already in a group, send a conflict notification
+        await _notificationService.sendUserNotification(
+          userId: userId,
+          title: 'Your request for ${groupData['name']} was approved!',
+          body: 'You are already in another group. Would you like to switch?',
+          type: 'group_join_conflict',
+          data: {
+            'newGroupId': groupId,
+            'currentGroupId': requestingUserGroup['id'],
+          },
+        );
+      } else {
+        // User is not in a group, add them directly
+        await _firestore.runTransaction((tx) async {
+          if (!members.contains(userId)) {
+            members.add(userId);
+            tx.update(groupRef, {
+              'members': members,
+              'memberCount': members.length,
+              'updatedAt': FieldValue.serverTimestamp(),
             });
+          }
+        });
+        await _updateGroupChatMembers(groupId);
+      }
 
-            return true;
-          })
-          .then((result) async {
-            if (result) {
-              // Update group chat in Realtime Database
-              await _updateGroupChatMembers(groupId);
-            }
-            return result;
-          });
+      // Update request status regardless
+      await requestRef.update({
+        'status': 'approved',
+        'reviewedAt': FieldValue.serverTimestamp(),
+        'reviewedBy': currentUser.uid,
+      });
+
+      await _notificationService.clearJoinRequestNotifications(
+        requestId: requestId,
+        memberIds: members,
+      );
+
+      return true;
     } catch (e) {
       print('❌ Error approving join request: $e');
       return false;
+    }
+  }
+
+  // Helper to get a specific user's group
+  Future<Map<String, dynamic>?> _getUserGroup(String userId) async {
+    final snapshot =
+        await _firestore
+            .collection(_collection)
+            .where('isActive', isEqualTo: true)
+            .where('members', arrayContains: userId)
+            .limit(1)
+            .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      return snapshot.docs.first.data();
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getGroupById(String groupId) async {
+    try {
+      final doc = await _firestore.collection(_collection).doc(groupId).get();
+      if (!doc.exists) return null;
+
+      final data = doc.data();
+      if (data == null) return null;
+
+      return {...data, 'id': data['id'] ?? doc.id};
+    } catch (e) {
+      print('❌ Error fetching group by ID: $e');
+      return null;
     }
   }
 
@@ -485,16 +627,32 @@ class GroupsService {
   }
 
   // ❌ Reject join request
-  Future<bool> rejectJoinRequest(String requestId) async {
+  Future<bool> rejectJoinRequest(String requestId, String groupId) async {
     final currentUser = AuthService().currentUser;
     if (currentUser == null) return false;
 
     try {
-      await _firestore.collection('joinRequests').doc(requestId).update({
+      final requestRef = _firestore.collection('joinRequests').doc(requestId);
+
+      // Get member IDs from the group to clear their notifications
+      final groupSnap =
+          await _firestore.collection(_collection).doc(groupId).get();
+      final memberIds = List<String>.from(groupSnap.data()?['members'] ?? []);
+
+      // Update the request status
+      await requestRef.update({
         'status': 'rejected',
         'reviewedAt': FieldValue.serverTimestamp(),
         'reviewedBy': currentUser.uid,
       });
+
+      // Clear notifications for all members
+      if (memberIds.isNotEmpty) {
+        await _notificationService.clearJoinRequestNotifications(
+          requestId: requestId,
+          memberIds: memberIds,
+        );
+      }
 
       print('✅ Join request rejected: $requestId');
       return true;

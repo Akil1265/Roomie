@@ -4,10 +4,7 @@ import 'package:roomie/services/groups_service.dart';
 class JoinRequestsScreen extends StatefulWidget {
   final Map<String, dynamic> group;
 
-  const JoinRequestsScreen({
-    super.key,
-    required this.group,
-  });
+  const JoinRequestsScreen({super.key, required this.group});
 
   @override
   State<JoinRequestsScreen> createState() => _JoinRequestsScreenState();
@@ -25,10 +22,7 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen> {
         elevation: 1,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Color(0xFF121417),
-          ),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF121417)),
         ),
         title: const Text(
           'Join Requests',
@@ -43,9 +37,7 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen> {
         stream: _groupsService.getGroupJoinRequests(widget.group['id']),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -53,26 +45,17 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red,
-                  ),
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
                   const SizedBox(height: 16),
                   const Text(
                     'Error Loading Requests',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     snapshot.error.toString(),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Color(0xFF677583),
-                    ),
+                    style: const TextStyle(color: Color(0xFF677583)),
                   ),
                 ],
               ),
@@ -104,9 +87,7 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen> {
                   Text(
                     'When people request to join your group,\\nthey\'ll appear here for approval.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Color(0xFF677583),
-                    ),
+                    style: TextStyle(color: Color(0xFF677583)),
                   ),
                 ],
               ),
@@ -152,22 +133,17 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen> {
                 CircleAvatar(
                   radius: 30,
                   backgroundColor: const Color(0xFF007AFF),
-                  backgroundImage: request['userProfileImage'] != null
-                      ? NetworkImage(request['userProfileImage'])
-                      : null,
-                  child: request['userProfileImage'] == null
-                      ? Text(
-                          (request['userName'] as String?)
-                                  ?.substring(0, 1)
-                                  .toUpperCase() ??
-                              'U',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                      : null,
+                  child: Text(
+                    (request['userName'] as String?)
+                            ?.substring(0, 1)
+                            .toUpperCase() ??
+                        'U',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 16),
                 // User Details
@@ -185,56 +161,30 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen> {
                       ),
                       const SizedBox(height: 4),
                       if (request['userEmail'] != null &&
-                          request['userEmail'].isNotEmpty) ...[
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.email_outlined,
-                              size: 16,
-                              color: Color(0xFF677583),
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                request['userEmail'],
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF677583),
-                                ),
-                              ),
-                            ),
-                          ],
+                          request['userEmail'].isNotEmpty)
+                        _buildDetailRow(
+                          icon: Icons.email_outlined,
+                          text: request['userEmail'],
                         ),
-                        const SizedBox(height: 2),
-                      ],
-                      if (request['userPhone'] != null &&
-                          request['userPhone'].isNotEmpty) ...[
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.phone_outlined,
-                              size: 16,
-                              color: Color(0xFF677583),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              request['userPhone'],
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF677583),
-                              ),
-                            ),
-                          ],
+                      if (request['userAge'] != null)
+                        _buildDetailRow(
+                          icon: Icons.cake_outlined,
+                          text: '${request['userAge']} years old',
                         ),
-                      ],
+                      if (request['userOccupation'] != null &&
+                          request['userOccupation'].isNotEmpty)
+                        _buildDetailRow(
+                          icon: Icons.work_outline,
+                          text: request['userOccupation'],
+                        ),
                     ],
                   ),
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Request Time
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -262,9 +212,9 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Action Buttons
             Row(
               children: [
@@ -281,9 +231,7 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen> {
                     ),
                     child: const Text(
                       'Reject',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -302,9 +250,7 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen> {
                     ),
                     child: const Text(
                       'Approve',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -312,6 +258,25 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow({required IconData icon, required String text}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: const Color(0xFF677583)),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 14, color: Color(0xFF677583)),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -327,7 +292,9 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen> {
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${request['userName']} has been added to the group!'),
+            content: Text(
+              '${request['userName']} has been added to the group!',
+            ),
             backgroundColor: Colors.green,
             action: SnackBarAction(
               label: 'OK',
@@ -338,6 +305,7 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen> {
             ),
           ),
         );
+        if (mounted) Navigator.of(context).pop(); // Pop after success
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -349,10 +317,7 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -360,7 +325,10 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen> {
 
   Future<void> _rejectRequest(Map<String, dynamic> request) async {
     try {
-      final success = await _groupsService.rejectJoinRequest(request['id']);
+      final success = await _groupsService.rejectJoinRequest(
+        request['id'],
+        request['groupId'], // Pass groupId
+      );
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -369,6 +337,7 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen> {
             backgroundColor: Colors.orange,
           ),
         );
+        if (mounted) Navigator.of(context).pop(); // Pop after success
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -380,10 +349,7 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }

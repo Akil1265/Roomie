@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:roomie/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:roomie/screens/login_s.dart';
 import 'package:roomie/screens/home_s.dart';
 import 'package:roomie/screens/user_profile_s.dart';
+import 'package:roomie/services/auth_service.dart';
 import 'package:roomie/widgets/auth_wrapper.dart';
 import 'package:roomie/services/notification_service.dart';
 
@@ -29,7 +31,15 @@ void main() async {
 
   print('🚀 Starting Roomie App (Firestore + Cloudinary mode)...');
 
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        Provider<AuthService>(create: (_) => AuthService()),
+        // Add other services here
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

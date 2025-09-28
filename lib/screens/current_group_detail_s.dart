@@ -1,31 +1,53 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:roomie/services/auth_service.dart';
-import 'package:roomie/services/groups_service.dart';
+import 'package:roomie/screens/join_requests_s.dart';
 
-class AvailableGroupDetailScreen extends StatefulWidget {
+class CurrentGroupDetailScreen extends StatefulWidget {
   final Map<String, dynamic> group;
+  final VoidCallback? onLeaveGroup;
 
-  const AvailableGroupDetailScreen({super.key, required this.group});
+  const CurrentGroupDetailScreen({
+    super.key,
+    required this.group,
+    this.onLeaveGroup,
+  });
 
   @override
-  State<AvailableGroupDetailScreen> createState() =>
-      _AvailableGroupDetailScreenState();
+  State<CurrentGroupDetailScreen> createState() =>
+      _CurrentGroupDetailScreenState();
 }
 
-class _AvailableGroupDetailScreenState
-    extends State<AvailableGroupDetailScreen> {
-  final GroupsService _groupsService = GroupsService();
-  final AuthService _authService = AuthService();
-  bool _isLoading = false;
+class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
+  late Future<List<Map<String, dynamic>>> _membersFuture;
   final PageController _pageController = PageController();
   int _currentImageIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _membersFuture = _fetchGroupMembers();
+  }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchGroupMembers() async {
+    final memberIds = List<String>.from(widget.group['members'] ?? []);
+    if (memberIds.isEmpty) {
+      return [];
+    }
+
+    final membersQuery =
+        await FirebaseFirestore.instance
+            .collection('users')
+            .where(FieldPath.documentId, whereIn: memberIds)
+            .get();
+
+    return membersQuery.docs.map((doc) => doc.data()).toList();
   }
 
   String _formatTimestamp(Timestamp? timestamp) {
@@ -67,51 +89,6 @@ class _AvailableGroupDetailScreenState
       decimalDigits: 0,
     );
     return '${formatter.format(amount)} deposit';
-  }
-
-  Future<void> _requestToJoin() async {
-    if (_isLoading) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final currentUser = _authService.currentUser;
-      if (currentUser == null) {
-        throw Exception('User not authenticated');
-      }
-
-      final success = await _groupsService.sendJoinRequest(widget.group['id']);
-
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Join request sent successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context);
-      } else {
-        throw Exception('Failed to send join request');
-      }
-    } catch (e) {
-      print('Error sending join request: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
   }
 
   @override
@@ -197,7 +174,7 @@ class _AvailableGroupDetailScreenState
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Text(
-                          'Available',
+                          'Active',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.teal,
@@ -254,8 +231,7 @@ class _AvailableGroupDetailScreenState
                         child: _buildInfoCard(
                           icon: Icons.group_outlined,
                           title: 'Roommates',
-                          value:
-                              '${widget.group['memberCount'] ?? 0} / ${widget.group['capacity']?.toString() ?? 'N/A'}',
+                          value: widget.group['capacity']?.toString() ?? 'N/A',
                           color: Colors.blueGrey,
                         ),
                       ),
@@ -296,6 +272,16 @@ class _AvailableGroupDetailScreenState
                     ),
                     const SizedBox(height: 24),
                   ],
+                  const Text(
+                    'Members',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF121417),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildMembersSection(),
                 ],
               ),
             ),
@@ -308,41 +294,51 @@ class _AvailableGroupDetailScreenState
           color: Colors.white,
           border: Border(top: BorderSide(color: Color(0xFFE8E8E8), width: 1)),
         ),
-        child: SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _requestToJoin,
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  _isLoading
-                      ? const Color(0xFFCCCCCC)
-                      : const Color(0xFF007AFF),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              disabledBackgroundColor: const Color(0xFFE0E0E0),
-            ),
-            child:
-                _isLoading
-                    ? const SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                    : const Text(
-                      'Request to Join',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => JoinRequestsScreen(group: widget.group),
                     ),
-          ),
+                  );
+                },
+                icon: const Icon(Icons.group_add_outlined),
+                label: const Text('Manage Join Requests'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF007AFF),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: OutlinedButton(
+                onPressed: widget.onLeaveGroup,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  side: const BorderSide(color: Colors.red),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Leave Group'),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -428,6 +424,81 @@ class _AvailableGroupDetailScreenState
               ),
             );
           }).toList(),
+    );
+  }
+
+  Widget _buildMembersSection() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _membersFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('No members found.'));
+        }
+
+        final members = snapshot.data!;
+        return Column(
+          children:
+              members.map((member) {
+                final isCreator = member['uid'] == widget.group['createdBy'];
+                return Card(
+                  elevation: 0,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: const BorderSide(color: Color(0xFFE8E8E8)),
+                  ),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: const Color(0xFFF0F0F0),
+                      backgroundImage:
+                          member['profileImageUrl'] != null
+                              ? NetworkImage(member['profileImageUrl'])
+                              : null,
+                      child:
+                          member['profileImageUrl'] == null
+                              ? const Icon(Icons.person, color: Colors.grey)
+                              : null,
+                    ),
+                    title: Text(
+                      member['name'] ?? 'Unnamed Member',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    trailing:
+                        isCreator
+                            ? Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.indigo.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                'Admin',
+                                style: TextStyle(
+                                  color: Colors.indigo,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            )
+                            : null,
+                    onTap: () {
+                      // Optional: Navigate to member's profile
+                    },
+                  ),
+                );
+              }).toList(),
+        );
+      },
     );
   }
 

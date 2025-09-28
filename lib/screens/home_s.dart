@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:roomie/screens/create_group_s.dart';
 import 'package:roomie/screens/user_profile_s.dart';
 import 'package:roomie/screens/chat_screen.dart';
 import 'package:roomie/screens/available_group_detail_s.dart';
 import 'package:roomie/screens/join_requests_s.dart';
+import 'package:roomie/screens/current_group_detail_s.dart';
 import 'package:roomie/screens/messages_page.dart';
+import 'package:roomie/screens/notifications_s.dart'; // Import notifications screen
 import 'package:roomie/services/groups_service.dart';
+import 'package:roomie/services/notification_service.dart';
+import 'package:roomie/services/auth_service.dart';
+import 'package:roomie/models/notification_model.dart';
 import 'package:roomie/widgets/roomie_loading_widget.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -20,10 +26,188 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentPageIndex = 1; // 0: Search, 1: Home, 2: Messages
 
   final GroupsService _groupsService = GroupsService();
+  final NotificationService _notificationService = NotificationService();
+  final AuthService _authService = AuthService();
   List<Map<String, dynamic>> _availableGroups = [];
   Map<String, dynamic>? _currentUserGroup;
   bool _isLoadingGroups = true;
   bool _canUserCreateGroup = true;
+
+  double _toDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
+  String _currencySymbol(String currency) {
+    switch (currency.toUpperCase()) {
+      case 'USD':
+        return r'$';
+      case 'EUR':
+        return '€';
+      case 'INR':
+      default:
+        return '₹';
+    }
+  }
+
+  String _formatAmount(double amount, String currency, {String? suffix}) {
+    if (amount <= 0) return 'Not specified';
+    final formatter = NumberFormat.compactCurrency(
+      symbol: _currencySymbol(currency),
+      decimalDigits: 0,
+    );
+    final formatted = formatter.format(amount);
+    if (suffix != null && suffix.isNotEmpty) {
+      return '$formatted $suffix';
+    }
+    return formatted;
+  }
+
+  Map<String, dynamic> _parseRentDetails(Map<String, dynamic> group) {
+    final dynamic rentRaw = group['rent'];
+    double rentAmount = _toDouble(group['rentAmount']);
+    String rentCurrency = (group['rentCurrency'] ?? '').toString();
+    double advanceAmount = _toDouble(group['advanceAmount']);
+
+    if (rentAmount == 0 && rentRaw != null) {
+      if (rentRaw is Map<String, dynamic>) {
+        rentAmount = _toDouble(rentRaw['amount']);
+      } else if (rentRaw is num || rentRaw is String) {
+        rentAmount = _toDouble(rentRaw);
+      }
+    }
+
+    if (rentCurrency.isEmpty && rentRaw is Map<String, dynamic>) {
+      rentCurrency = (rentRaw['currency'] ?? 'INR').toString();
+    }
+    if (rentCurrency.isEmpty) {
+      rentCurrency = 'INR';
+    }
+
+    if (advanceAmount == 0 && rentRaw is Map<String, dynamic>) {
+      advanceAmount = _toDouble(rentRaw['advanceAmount']);
+    }
+
+    return {
+      'rentAmount': rentAmount,
+      'rentCurrency': rentCurrency,
+      'advanceAmount': advanceAmount,
+    };
+  }
+
+  Widget _buildMetaChip({
+    required IconData icon,
+    required Color color,
+    required String label,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationButton() {
+    final userId = _authService.currentUser?.uid;
+
+    if (userId == null) {
+      return _buildNotificationIconShell();
+    }
+
+    return StreamBuilder<List<NotificationModel>>(
+      stream: _notificationService.getNotifications(userId),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return _buildNotificationIconShell();
+        }
+
+        final notifications = snapshot.data ?? const [];
+        final unreadCount =
+            notifications.where((notification) => !notification.isRead).length;
+
+        return _buildNotificationIconShell(unreadCount: unreadCount);
+      },
+    );
+  }
+
+  Widget _buildNotificationIconShell({int unreadCount = 0}) {
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(child: _buildNotificationIcon()),
+          if (unreadCount > 0)
+            Positioned(
+              right: 0,
+              top: -2,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                constraints: const BoxConstraints(minHeight: 18, minWidth: 18),
+                child: Center(
+                  child: Text(
+                    unreadCount > 99 ? '99+' : unreadCount.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationIcon() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: IconButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const NotificationsScreen(),
+            ),
+          );
+        },
+        icon: const Icon(
+          Icons.notifications_none,
+          color: Color(0xFF121417),
+          size: 24,
+        ),
+        padding: EdgeInsets.zero,
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -78,28 +262,30 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final confirmed = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Leave Group'),
-          content: Text(
-              'Are you sure you want to leave ${_currentUserGroup!['name']}?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Leave Group'),
+              content: Text(
+                'Are you sure you want to leave ${_currentUserGroup!['name']}?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  child: const Text('Leave'),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Leave'),
-            ),
-          ],
-        ),
       );
 
       if (confirmed == true) {
         await _groupsService.leaveGroup(_currentUserGroup!['id']);
         // Pop the details screen
-        if(mounted) Navigator.of(context).pop();
+        if (mounted) Navigator.of(context).pop();
         await _loadUserGroupData(); // Refresh home screen data
 
         if (mounted) {
@@ -129,11 +315,11 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => GroupDetailsScreen(
-          group: _currentUserGroup!,
-          isCurrentUserGroup: true,
-          onLeaveGroup: _leaveGroup,
-        ),
+        builder:
+            (context) => CurrentGroupDetailScreen(
+              group: _currentUserGroup!,
+              onLeaveGroup: _leaveGroup,
+            ),
       ),
     ).then((_) => _loadUserGroupData());
   }
@@ -242,6 +428,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     Row(
                       children: [
+                        // Notifications button with badge
+                        _buildNotificationButton(),
+                        const SizedBox(width: 8),
                         // Profile button
                         Container(
                           width: 40,
@@ -255,8 +444,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      const UserProfileScreen(),
+                                  builder:
+                                      (context) => const UserProfileScreen(),
                                 ),
                               );
                             },
@@ -283,8 +472,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) =>
-                                        const CreateGroupScreen(),
+                                    builder:
+                                        (context) => const CreateGroupScreen(),
                                   ),
                                 ).then((_) => _loadUserGroupData());
                               },
@@ -316,12 +505,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Padding(
                         padding: EdgeInsets.all(32.0),
                         child: Center(
-                        child: RoomieLoadingWidget(
-                          size: 80,
-                          text: 'Loading groups...',
-                          showText: true,
+                          child: RoomieLoadingWidget(
+                            size: 80,
+                            text: 'Loading groups...',
+                            showText: true,
+                          ),
                         ),
-                      ),
                       )
                     else ...[
                       // Current Room Section (show if user is in a group)
@@ -369,7 +558,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ],
                     const SizedBox(
-                        height: 100), // Bottom padding for page indicators
+                      height: 100,
+                    ), // Bottom padding for page indicators
                   ],
                 ),
               ),
@@ -381,6 +571,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCozyCornerCard() {
+    final pricing = _parseRentDetails(_currentUserGroup!);
+    final double rentAmount = pricing['rentAmount'] as double;
+    final String rentCurrency = pricing['rentCurrency'] as String;
+    final double advanceAmount = pricing['advanceAmount'] as double;
+    final String roomType =
+        (_currentUserGroup!['roomType'] ?? 'Shared').toString();
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
       child: GestureDetector(
@@ -414,8 +611,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return const Center(
-                          child: Icon(Icons.image,
-                              color: Colors.grey, size: 50),
+                          child: Icon(
+                            Icons.image,
+                            color: Colors.grey,
+                            size: 50,
+                          ),
                         );
                       },
                     ),
@@ -443,8 +643,40 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Color(0xFF677583),
                             height: 1.4,
                           ),
-                           maxLines: 2,
-                           overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            if (rentAmount > 0)
+                              _buildMetaChip(
+                                icon: Icons.attach_money,
+                                color: Colors.green,
+                                label: _formatAmount(
+                                  rentAmount,
+                                  rentCurrency,
+                                  suffix: 'per month',
+                                ),
+                              ),
+                            if (advanceAmount > 0)
+                              _buildMetaChip(
+                                icon: Icons.account_balance_wallet_outlined,
+                                color: Colors.deepPurple,
+                                label: _formatAmount(
+                                  advanceAmount,
+                                  rentCurrency,
+                                  suffix: 'advance',
+                                ),
+                              ),
+                            _buildMetaChip(
+                              icon: Icons.home_outlined,
+                              color: Colors.teal,
+                              label: roomType,
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
                         Row(
@@ -463,10 +695,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => ChatScreen(
-                                      chatData: _currentUserGroup!,
-                                      chatType: 'group',
-                                    ),
+                                    builder:
+                                        (context) => ChatScreen(
+                                          chatData: _currentUserGroup!,
+                                          chatType: 'group',
+                                        ),
                                   ),
                                 );
                               },
@@ -536,10 +769,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _canUserCreateGroup
                     ? 'Create your first group to get started'
                     : 'You are already in a group.',
-                style: const TextStyle(
-                  color: Color(0xFF677583),
-                  fontSize: 14,
-                ),
+                style: const TextStyle(color: Color(0xFF677583), fontSize: 14),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -551,105 +781,154 @@ class _HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
-        children: _availableGroups.map((group) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AvailableGroupDetailScreen(
-                      group: group,
-                    ),
-                  ),
-                ).then((_) => _loadUserGroupData()); // Refresh data when returning
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            group['name'] ?? 'Unknown Group',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF121417),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${group['location'] ?? 'Location'}, ${group['memberCount'] ?? 0} members',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF677583),
-                            ),
-                          ),
-                          if (group['description'] != null) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              group['description'],
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF677583),
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: const Color(0xFFF5F5F5),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: group['imageUrl'] != null
-                            ? Image.network(
-                                group['imageUrl'],
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
-                                    Icons.group,
-                                    color: Colors.grey,
-                                    size: 30,
-                                  );
-                                },
-                              )
-                            : const Icon(
-                                Icons.group,
-                                color: Colors.grey,
-                                size: 30,
-                              ),
-                      ),
+        children:
+            _availableGroups.map((group) {
+              final pricing = _parseRentDetails(group);
+              final double rentAmount = pricing['rentAmount'] as double;
+              final String rentCurrency = pricing['rentCurrency'] as String;
+              final double advanceAmount = pricing['advanceAmount'] as double;
+              final String roomType =
+                  (group['roomType'] ?? 'Shared').toString();
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-              ),
-            ),
-          );
-        }).toList(),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) =>
+                                AvailableGroupDetailScreen(group: group),
+                      ),
+                    ).then(
+                      (_) => _loadUserGroupData(),
+                    ); // Refresh data when returning
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                group['name'] ?? 'Unknown Group',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF121417),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${group['location'] ?? 'Location'}, ${group['memberCount'] ?? 0} members',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF677583),
+                                ),
+                              ),
+                              if (group['description'] != null) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  group['description'],
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF677583),
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  if (rentAmount > 0)
+                                    _buildMetaChip(
+                                      icon: Icons.attach_money,
+                                      color: Colors.green,
+                                      label: _formatAmount(
+                                        rentAmount,
+                                        rentCurrency,
+                                        suffix: 'per month',
+                                      ),
+                                    ),
+                                  if (advanceAmount > 0)
+                                    _buildMetaChip(
+                                      icon:
+                                          Icons.account_balance_wallet_outlined,
+                                      color: Colors.deepPurple,
+                                      label: _formatAmount(
+                                        advanceAmount,
+                                        rentCurrency,
+                                        suffix: 'advance',
+                                      ),
+                                    ),
+                                  if (roomType.isNotEmpty)
+                                    _buildMetaChip(
+                                      icon: Icons.home_outlined,
+                                      color: Colors.teal,
+                                      label: roomType,
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: const Color(0xFFF5F5F5),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child:
+                                group['imageUrl'] != null
+                                    ? Image.network(
+                                      group['imageUrl'],
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (
+                                        context,
+                                        error,
+                                        stackTrace,
+                                      ) {
+                                        return const Icon(
+                                          Icons.group,
+                                          color: Colors.grey,
+                                          size: 30,
+                                        );
+                                      },
+                                    )
+                                    : const Icon(
+                                      Icons.group,
+                                      color: Colors.grey,
+                                      size: 30,
+                                    ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
       ),
     );
   }
@@ -661,11 +940,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search,
-              size: 64,
-              color: Colors.grey,
-            ),
+            Icon(Icons.search, size: 64, color: Colors.grey),
             SizedBox(height: 16),
             Text(
               'Search',
@@ -678,10 +953,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(height: 8),
             Text(
               'Search functionality coming soon',
-              style: TextStyle(
-                fontSize: 16,
-                color: Color(0xFF677583),
-              ),
+              style: TextStyle(fontSize: 16, color: Color(0xFF677583)),
             ),
           ],
         ),
@@ -716,10 +988,7 @@ class GroupDetailsScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Color(0xFF121417),
-          ),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF121417)),
         ),
         title: Text(
           group['name'] ?? 'Group Details',
@@ -827,16 +1096,12 @@ class GroupDetailsScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => JoinRequestsScreen(
-                                group: group,
-                              ),
+                              builder:
+                                  (context) => JoinRequestsScreen(group: group),
                             ),
                           );
                         },
-                        icon: const Icon(
-                          Icons.group_add,
-                          size: 18,
-                        ),
+                        icon: const Icon(Icons.group_add, size: 18),
                         label: const Text(
                           'Manage Join Requests',
                           style: TextStyle(
