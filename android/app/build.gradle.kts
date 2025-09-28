@@ -6,11 +6,14 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin") // Must stay last
 }
 
+import java.util.Properties
+import java.io.FileInputStream
+
 // Read API key from .env file
-val localProperties = java.util.Properties()
+val localProperties = Properties()
 val localPropertiesFile = rootProject.file("../.env")
 if (localPropertiesFile.exists()) {
-    localProperties.load(java.io.FileInputStream(localPropertiesFile))
+    localProperties.load(FileInputStream(localPropertiesFile))
 }
 
 
