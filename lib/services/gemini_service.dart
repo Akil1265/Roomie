@@ -1,7 +1,8 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 class GeminiService {
-  static const String _apiKey = 'AIzaSyA--40QCPOslSGWu4arCweG55hODAg_xso';
+  static final String _apiKey = dotenv.env['GEMINI_API_KEY']!;
   late GenerativeModel _model;
   late ChatSession _chat;
 
@@ -40,14 +41,15 @@ If asked about features of the Roomie app, you can mention:
 Keep responses under 200 words unless specifically asked for detailed explanations.
       '''),
     );
-    
+
     _chat = _model.startChat();
   }
 
   Future<String> sendMessage(String message) async {
     try {
       final response = await _chat.sendMessage(Content.text(message));
-      return response.text ?? 'Sorry, I couldn\'t generate a response. Please try again.';
+      return response.text ??
+          'Sorry, I couldn\'t generate a response. Please try again.';
     } catch (e) {
       print('Error sending message to Gemini: $e');
       return 'Sorry, I\'m having trouble connecting right now. Please check your internet connection and try again.';

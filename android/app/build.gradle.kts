@@ -6,6 +6,14 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin") // Must stay last
 }
 
+// Read API key from .env file
+val localProperties = java.util.Properties()
+val localPropertiesFile = rootProject.file("../.env")
+if (localPropertiesFile.exists()) {
+    localProperties.load(java.io.FileInputStream(localPropertiesFile))
+}
+
+
 android {
     namespace = "com.example.roomie"
     compileSdk = 36
@@ -29,6 +37,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Make the API key available to the app
+        resValue("string", "google_maps_api_key_from_env", localProperties.getProperty("GOOGLE_MAPS_API_KEY_ANDROID") ?: "YOUR_API_KEY_HERE")
     }
 
     // Signing configs commented out for development
