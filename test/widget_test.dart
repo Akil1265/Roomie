@@ -7,7 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:roomie/screens/login_s.dart';
+import 'package:roomie/screens/auth/login_s.dart';
 
 void main() {
   testWidgets('PhoneLoginScreen renders key UI elements', (

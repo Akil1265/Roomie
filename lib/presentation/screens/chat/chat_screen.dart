@@ -68,10 +68,10 @@ class _ChatScreenState extends State<ChatScreen> {
         print('✅ Group chat initialized: $_chatId');
       } else {
         // Initialize individual chat
-        final otherUserId = widget.chatData['id'] ?? widget.chatData['userId'];
-        final otherUserName = widget.chatData['name'] ?? 'User';
+        final otherUserId = widget.chatData['otherUserId'] ?? widget.chatData['userId'];
+        final otherUserName = widget.chatData['otherUserName'] ?? widget.chatData['name'] ?? 'User';
         final otherUserImageUrl =
-            widget.chatData['imageUrl'] ?? widget.chatData['profileImageUrl'];
+            widget.chatData['otherUserImageUrl'] ?? widget.chatData['profileImageUrl'] ?? widget.chatData['imageUrl'];
 
         print(
           '👤 Individual chat - Other user ID: $otherUserId, Name: $otherUserName',
@@ -707,15 +707,12 @@ class _ChatScreenState extends State<ChatScreen> {
     } else {
       title = widget.chatData['name'] ?? 'Chat';
       subtitle = widget.chatData['email'] ?? 'User';
+      final imageUrl = widget.chatData['profileImageUrl'] ?? widget.chatData['imageUrl'];
       leadingAvatar = CircleAvatar(
         radius: 20,
         backgroundColor: const Color(0xFF007AFF),
-        backgroundImage:
-            widget.chatData['profileImageUrl'] != null
-                ? NetworkImage(widget.chatData['profileImageUrl'])
-                : null,
-        child:
-            widget.chatData['profileImageUrl'] == null
+        backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
+        child: imageUrl == null
                 ? Text(
                   (widget.chatData['name'] as String?)
                           ?.substring(0, 1)

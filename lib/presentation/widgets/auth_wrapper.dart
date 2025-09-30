@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:roomie/screens/home_s.dart';
-import 'package:roomie/screens/login_s.dart';
+import 'package:roomie/screens/auth/login_s.dart';
+import 'package:roomie/screens/home/home_s.dart';
+import 'package:roomie/screens/profile/user_details_s.dart';
 import 'package:roomie/services/auth_service.dart';
 import 'package:roomie/services/firestore_service.dart';
-import 'package:roomie/screens/user_details_s.dart';
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});

@@ -1,34 +1,27 @@
 {
   "project_info": {
     "project_number": "1066645245892",
+    "firebase_url": "https://roomie-cfc03-default-rtdb.firebaseio.com",
     "project_id": "roomie-cfc03",
     "storage_bucket": "roomie-cfc03.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1066645245892:android:47bb217ca82ac28fe81e91",
+        "mobilesdk_app_id": "1:1066645245892:android:f8abb05603ffd67fe81e91",
         "android_client_info": {
           "package_name": "com.example.roomie"
         }
       },
       "oauth_client": [
         {
-          "client_id": "1066645245892-uj54e0j951ah54a8msqr05h34seoetkc.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.roomie",
-            "certificate_hash": "5c49817871a0e292b5f23650df111ca8da3915bd"
-          }
-        },
-        {
-          "client_id": "1066645245892-p4fvvqms9o76tsmstrrnon30h58vom8s.apps.googleusercontent.com",
+          "client_id": "1066645245892-tatlpo6pr90kut768hbn5kngo929luck.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyB_nNre56sb-GusDfE0dby8WbemlcdoBro"
+          "current_key": "AIzaSyAg7tEw-E93qmlQD584-rAKK-F2UkD8GBY"
         }
       ],
       "services": {

@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:roomie/screens/join_requests_s.dart';
+import 'package:roomie/screens/groups/join_requests_s.dart';
+import 'package:roomie/screens/profile/other_user_profile_s.dart';
+import 'package:roomie/services/firestore_service.dart';
 
 class CurrentGroupDetailScreen extends StatefulWidget {
   final Map<String, dynamic> group;
@@ -22,11 +25,19 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
   late Future<List<Map<String, dynamic>>> _membersFuture;
   final PageController _pageController = PageController();
   int _currentImageIndex = 0;
+  final String _currentUserId = FirebaseAuth.instance.currentUser!.uid;
+  final FirestoreService _firestoreService = FirestoreService();
+  final Map<String, bool> _followingStatus = {};
 
   @override
   void initState() {
     super.initState();
     _membersFuture = _fetchGroupMembers();
+    _membersFuture.then((members) => _checkFollowingStatus(members));
+  }
+
+  void _refreshFollowingStatus() {
+    _membersFuture.then((members) => _checkFollowingStatus(members));
   }
 
   @override
@@ -37,17 +48,57 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
 
   Future<List<Map<String, dynamic>>> _fetchGroupMembers() async {
     final memberIds = List<String>.from(widget.group['members'] ?? []);
+    debugPrint('Group members IDs: $memberIds');
     if (memberIds.isEmpty) {
       return [];
     }
 
-    final membersQuery =
-        await FirebaseFirestore.instance
-            .collection('users')
-            .where(FieldPath.documentId, whereIn: memberIds)
-            .get();
+    final membersQuery = await FirebaseFirestore.instance
+        .collection('users')
+        .where(FieldPath.documentId, whereIn: memberIds)
+        .get();
 
-    return membersQuery.docs.map((doc) => doc.data()).toList();
+    final membersList = membersQuery.docs
+        .map((doc) => {'id': doc.id, ...doc.data()})
+        .toList();
+    debugPrint('Fetched members data: $membersList');
+    return membersList;
+  }
+
+  Future<void> _checkFollowingStatus(List<Map<String, dynamic>> members) async {
+    for (var member in members) {
+      if (member['id'] != _currentUserId) {
+        final isFollowing =
+            await _firestoreService.isFollowing(_currentUserId, member['id']);
+        if (mounted) {
+          setState(() {
+            _followingStatus[member['id']] = isFollowing;
+          });
+        }
+      }
+    }
+  }
+
+  Future<void> _toggleFollow(String memberId) async {
+    final isCurrentlyFollowing = _followingStatus[memberId] ?? false;
+    if (mounted) {
+      setState(() {
+        _followingStatus[memberId] = !isCurrentlyFollowing;
+      });
+    }
+    try {
+      if (isCurrentlyFollowing) {
+        await _firestoreService.unfollowUser(_currentUserId, memberId);
+      } else {
+        await _firestoreService.followUser(_currentUserId, memberId);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _followingStatus[memberId] = isCurrentlyFollowing; // Revert on error
+        });
+      }
+    }
   }
 
   String _formatTimestamp(Timestamp? timestamp) {
@@ -89,6 +140,44 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
       decimalDigits: 0,
     );
     return '${formatter.format(amount)} deposit';
+  }
+
+  Future<void> _showLeaveGroupDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Leave Group'),
+          content: const SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Are you sure you want to leave this group?'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Leave'),
+              onPressed: () {
+                if (widget.onLeaveGroup != null) {
+                  widget.onLeaveGroup!();
+                }
+                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context)
+                    .pop(); // Go back from the group detail screen
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -150,9 +239,8 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                mainAxisSize: MainAxisSize.min,
+                children: [
                       Expanded(
                         child: Text(
                           widget.group['name'] ?? 'Unnamed Group',
@@ -259,7 +347,7 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                   if (widget.group['amenities'] != null &&
                       (widget.group['amenities'] as List).isNotEmpty) ...[
                     const Text(
-                      'Amenities',
+                      'Facilities',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -272,13 +360,68 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                     ),
                     const SizedBox(height: 24),
                   ],
-                  const Text(
-                    'Members',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF121417),
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Members',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF121417),
+                        ),
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => JoinRequestsScreen(
+                                    group: widget.group,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Image.asset(
+                              'assets/icons/manage_request.png',
+                              width: 24,
+                              height: 24,
+                              errorBuilder: (context, error, stack) => SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  size: 18,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          GestureDetector(
+                            onTap: _showLeaveGroupDialog,
+                            child: Image.asset(
+                              'assets/icons/leave_group.png',
+                              width: 30,
+                              height: 30,
+                              errorBuilder: (context, error, stack) => SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  size: 18,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   _buildMembersSection(),
@@ -287,59 +430,6 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Color(0xFFE8E8E8), width: 1)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => JoinRequestsScreen(group: widget.group),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.group_add_outlined),
-                label: const Text('Manage Join Requests'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF007AFF),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: OutlinedButton(
-                onPressed: widget.onLeaveGroup,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  side: const BorderSide(color: Colors.red),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('Leave Group'),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -443,60 +533,93 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
 
         final members = snapshot.data!;
         return Column(
-          children:
-              members.map((member) {
-                final isCreator = member['uid'] == widget.group['createdBy'];
-                return Card(
-                  elevation: 0,
-                  margin: const EdgeInsets.only(bottom: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    side: const BorderSide(color: Color(0xFFE8E8E8)),
-                  ),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      radius: 20,
-                      backgroundColor: const Color(0xFFF0F0F0),
-                      backgroundImage:
-                          member['profileImageUrl'] != null
-                              ? NetworkImage(member['profileImageUrl'])
-                              : null,
-                      child:
-                          member['profileImageUrl'] == null
-                              ? const Icon(Icons.person, color: Colors.grey)
-                              : null,
-                    ),
-                    title: Text(
-                      member['name'] ?? 'Unnamed Member',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    trailing:
-                        isCreator
-                            ? Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
+          children: members.map((member) {
+            final isCreator = member['uid'] == widget.group['createdBy'];
+            final isCurrentUser = member['id'] == _currentUserId;
+            final isFollowing = _followingStatus[member['id']] ?? false;
+
+            debugPrint(
+                'Building member item: ${member['name']}, isCurrentUser: $isCurrentUser, isCreator: $isCreator');
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ListTile(
+                onTap: () async {
+                  if (!isCurrentUser) {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OtherUserProfileScreen(
+                          userId: member['id'],
+                        ),
+                      ),
+                    );
+                    // Refresh following status when returning
+                    _refreshFollowingStatus();
+                  }
+                },
+                contentPadding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                leading: CircleAvatar(
+                  radius: 20,
+                  backgroundColor: const Color(0xFFF0F0F0),
+                  backgroundImage: member['profileImageUrl'] != null
+                      ? NetworkImage(member['profileImageUrl'])
+                      : null,
+                  child: member['profileImageUrl'] == null
+                      ? const Icon(Icons.person, color: Colors.grey)
+                      : null,
+                ),
+                title: Text(
+                  member['name'] ?? 'Unnamed Member',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                trailing: isCurrentUser
+                    ? const Text('You', style: TextStyle(color: Colors.grey))
+                    : isCreator
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.indigo.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              'Admin',
+                              style: TextStyle(
+                                color: Colors.indigo,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
                               ),
-                              decoration: BoxDecoration(
-                                color: Colors.indigo.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text(
-                                'Admin',
-                                style: TextStyle(
-                                  color: Colors.indigo,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
+                            ),
+                          )
+                        : (!isFollowing
+                            ? ElevatedButton(
+                                onPressed: () => _toggleFollow(member['id']),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.black,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 2,
+                                  ),
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  minimumSize: const Size(0, 30),
                                 ),
-                              ),
-                            )
-                            : null,
-                    onTap: () {
-                      // Optional: Navigate to member's profile
-                    },
-                  ),
-                );
-              }).toList(),
+                                child: const Text('Follow'),
+                              )
+                            : const SizedBox.shrink()),
+              ),
+            );
+          }).toList(),
         );
       },
     );

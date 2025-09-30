@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:roomie/services/firestore_service.dart';
-import 'package:roomie/services/auth_service.dart';
-import 'package:roomie/services/profile_image_notifier.dart';
 import 'package:roomie/models/user_model.dart';
-import 'package:roomie/screens/edit_profile_s.dart';
+import 'package:roomie/screens/profile/edit_profile_s.dart';
+import 'package:roomie/services/auth_service.dart';
+import 'package:roomie/services/firestore_service.dart';
+import 'package:roomie/services/profile_image_notifier.dart';
 import 'package:roomie/widgets/profile_image_widget.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -195,7 +195,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     print('Optimistically updating profile image to $newUrl');
                     _profileImageNotifier.updateProfileImage(newUrl);
                     setState(() {
-                      _currentUser = _currentUser!.copyWith(profileImageUrl: newUrl);
+                      _currentUser = _currentUser!.copyWith(
+                        profileImageUrl: newUrl,
+                      );
                     });
                   }
                   _loadUserData(); // still refetch to ensure consistency
@@ -217,7 +219,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             Center(
               child: ProfileImageWidget(
                 // Prefer model URL; if null fallback to global notifier current value
-                imageUrl: _currentUser!.profileImageUrl ?? _profileImageNotifier.currentImageId,
+                imageUrl:
+                    _currentUser!.profileImageUrl ??
+                    _profileImageNotifier.currentImageId,
                 radius: 60,
                 placeholder: const Icon(
                   Icons.person,

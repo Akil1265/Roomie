@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:roomie/screens/create_group_s.dart';
-import 'package:roomie/screens/user_profile_s.dart';
-import 'package:roomie/screens/chat_screen.dart';
-import 'package:roomie/screens/available_group_detail_s.dart';
-import 'package:roomie/screens/join_requests_s.dart';
-import 'package:roomie/screens/current_group_detail_s.dart';
-import 'package:roomie/screens/messages_page.dart';
-import 'package:roomie/screens/notifications_s.dart'; // Import notifications screen
+import 'package:roomie/models/notification_model.dart';
+import 'package:roomie/screens/chat/chat_screen.dart';
+import 'package:roomie/screens/chat/messages_page.dart';
+import 'package:roomie/screens/groups/available_group_detail_s.dart';
+import 'package:roomie/screens/groups/create_group_s.dart';
+import 'package:roomie/screens/groups/current_group_detail_s.dart';
+import 'package:roomie/screens/groups/join_requests_s.dart';
+import 'package:roomie/screens/notifications/notifications_s.dart';
+import 'package:roomie/screens/profile/user_profile_s.dart';
+import 'package:roomie/services/auth_service.dart';
 import 'package:roomie/services/groups_service.dart';
 import 'package:roomie/services/notification_service.dart';
-import 'package:roomie/services/auth_service.dart';
-import 'package:roomie/models/notification_model.dart';
 import 'package:roomie/widgets/roomie_loading_widget.dart';
 
 class HomeScreen extends StatefulWidget {

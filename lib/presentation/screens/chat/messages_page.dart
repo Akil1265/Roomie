@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:roomie/screens/chat/chat_screen.dart';
+import 'package:roomie/screens/chat/group_chat_s.dart';
 import 'package:roomie/services/messages_service.dart';
-import 'package:roomie/screens/chat_screen.dart';
-import 'package:roomie/screens/group_chat_s.dart';
 import 'package:roomie/widgets/roomie_loading_widget.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -24,41 +24,46 @@ class _MessagesPageState extends State<MessagesPage> {
     _searchController.dispose();
     super.dispose();
   }
-  
 
-  
   void _onSearchChanged(String value) {
     setState(() {
       _searchQuery = value;
     });
   }
 
-  List<Map<String, dynamic>> _applyFilters(List<Map<String, dynamic>> conversations) {
+  List<Map<String, dynamic>> _applyFilters(
+    List<Map<String, dynamic>> conversations,
+  ) {
     List<Map<String, dynamic>> filtered = [];
-    
+
     // First, filter by type
     switch (_selectedFilter) {
       case 'groups':
-        filtered = conversations.where((conv) => conv['type'] == 'group').toList();
+        filtered =
+            conversations.where((conv) => conv['type'] == 'group').toList();
         break;
       case 'individual':
-        filtered = conversations.where((conv) => conv['type'] == 'individual').toList();
+        filtered =
+            conversations
+                .where((conv) => conv['type'] == 'individual')
+                .toList();
         break;
       case 'all':
       default:
         filtered = List.from(conversations);
     }
-    
+
     // Then, filter by search query
     if (_searchQuery.isNotEmpty) {
-      filtered = filtered.where((conv) {
-        final name = (conv['name'] ?? '').toLowerCase();
-        final lastMessage = (conv['lastMessage'] ?? '').toLowerCase();
-        final query = _searchQuery.toLowerCase();
-        return name.contains(query) || lastMessage.contains(query);
-      }).toList();
+      filtered =
+          filtered.where((conv) {
+            final name = (conv['name'] ?? '').toLowerCase();
+            final lastMessage = (conv['lastMessage'] ?? '').toLowerCase();
+            final query = _searchQuery.toLowerCase();
+            return name.contains(query) || lastMessage.contains(query);
+          }).toList();
     }
-    
+
     return filtered;
   }
 
@@ -93,7 +98,7 @@ class _MessagesPageState extends State<MessagesPage> {
               ),
             ),
           ),
-          
+
           // Search bar and Filter tabs on same row
           Container(
             color: Colors.white,
@@ -123,7 +128,10 @@ class _MessagesPageState extends State<MessagesPage> {
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                   ),
@@ -142,9 +150,9 @@ class _MessagesPageState extends State<MessagesPage> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Content
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
@@ -212,10 +220,7 @@ class _MessagesPageState extends State<MessagesPage> {
                         SizedBox(height: 8),
                         Text(
                           'Start a conversation by joining a group!',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
                         ),
                       ],
                     ),
@@ -266,9 +271,10 @@ class _MessagesPageState extends State<MessagesPage> {
   Widget _buildConversationTile(Map<String, dynamic> conversation) {
     final isGroup = conversation['type'] == 'group';
     final lastMessageTime = conversation['lastMessageTime'] as DateTime?;
-    final timeText = lastMessageTime != null 
-        ? timeago.format(lastMessageTime, locale: 'en_short')
-        : '';
+    final timeText =
+        lastMessageTime != null
+            ? timeago.format(lastMessageTime, locale: 'en_short')
+            : '';
 
     return Container(
       color: Colors.white,
@@ -276,17 +282,22 @@ class _MessagesPageState extends State<MessagesPage> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
           radius: 24,
-          backgroundColor: isGroup ? const Color(0xFF121417) : Colors.grey.shade400,
-          backgroundImage: conversation['imageUrl'] != null && conversation['imageUrl'].isNotEmpty
-              ? NetworkImage(conversation['imageUrl'])
-              : null,
-          child: conversation['imageUrl'] == null || conversation['imageUrl'].isEmpty
-              ? Icon(
-                  isGroup ? Icons.group : Icons.person,
-                  color: Colors.white,
-                  size: 20,
-                )
-              : null,
+          backgroundColor:
+              isGroup ? const Color(0xFF121417) : Colors.grey.shade400,
+          backgroundImage:
+              conversation['imageUrl'] != null &&
+                      conversation['imageUrl'].isNotEmpty
+                  ? NetworkImage(conversation['imageUrl'])
+                  : null,
+          child:
+              conversation['imageUrl'] == null ||
+                      conversation['imageUrl'].isEmpty
+                  ? Icon(
+                    isGroup ? Icons.group : Icons.person,
+                    color: Colors.white,
+                    size: 20,
+                  )
+                  : null,
         ),
         title: Row(
           children: [
@@ -304,10 +315,7 @@ class _MessagesPageState extends State<MessagesPage> {
             if (timeText.isNotEmpty)
               Text(
                 timeText,
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
               ),
           ],
         ),
@@ -317,10 +325,7 @@ class _MessagesPageState extends State<MessagesPage> {
             const SizedBox(height: 4),
             Text(
               conversation['lastMessage'] ?? 'No messages yet',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
             ),
@@ -328,10 +333,7 @@ class _MessagesPageState extends State<MessagesPage> {
               const SizedBox(height: 2),
               Text(
                 '${conversation['memberCount']} members',
-                style: TextStyle(
-                  color: Colors.grey.shade500,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
               ),
             ],
           ],
@@ -348,15 +350,16 @@ class _MessagesPageState extends State<MessagesPage> {
 
   void _openConversation(Map<String, dynamic> conversation) {
     final isGroup = conversation['type'] == 'group';
-    
+
     if (isGroup) {
       // Navigate to group chat
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => GroupChatScreen(
-            group: conversation['groupData'] ?? conversation,
-          ),
+          builder:
+              (context) => GroupChatScreen(
+                group: conversation['groupData'] ?? conversation,
+              ),
         ),
       );
     } else {
@@ -364,16 +367,17 @@ class _MessagesPageState extends State<MessagesPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => ChatScreen(
-            chatData: {
-              'id': conversation['id'],
-              'name': conversation['name'] ?? 'User',
-              'imageUrl': conversation['imageUrl'],
-              'otherUserId': conversation['otherUserId'],
-              'userData': conversation['userData'] ?? {},
-            },
-            chatType: 'individual',
-          ),
+          builder:
+              (context) => ChatScreen(
+                chatData: {
+                  'id': conversation['id'],
+                  'name': conversation['name'] ?? 'User',
+                  'imageUrl': conversation['imageUrl'],
+                  'otherUserId': conversation['otherUserId'],
+                  'userData': conversation['userData'] ?? {},
+                },
+                chatType: 'individual',
+              ),
         ),
       );
     }

@@ -1,6 +1,21 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+String _env(String key) {
+  try {
+    final value = dotenv.env[key] ?? dotenv.env['FIREBASE_API_KEY'];
+    if (value != null && value.isNotEmpty) {
+      return value;
+    }
+  } catch (e) {
+    // dotenv not loaded, use fallback
+  }
+  
+  // Fallback to hardcoded Firebase API key for mobile
+  return 'AIzaSyAg7tEw-E93qmlQD584-rAKK-F2UkD8GBY';
+}
 
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
@@ -18,10 +33,7 @@ class DefaultFirebaseOptions {
           'you can reconfigure this by running the FlutterFire CLI again.',
         );
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -35,8 +47,8 @@ class DefaultFirebaseOptions {
   }
 
   static final FirebaseOptions android = FirebaseOptions(
-    apiKey: dotenv.env['GOOGLE_MAPS_API_KEY_ANDROID']!,
-    appId: '1:1066645245892:android:47bb217ca82ac28fe81e91',
+    apiKey: _env('FIREBASE_API_KEY'),
+    appId: '1:1066645245892:android:f8abb05603ffd67fe81e91',
     messagingSenderId: '1066645245892',
     projectId: 'roomie-cfc03',
     databaseURL: 'https://roomie-cfc03-default-rtdb.firebaseio.com/',
@@ -44,8 +56,8 @@ class DefaultFirebaseOptions {
   );
 
   static final FirebaseOptions ios = FirebaseOptions(
-    apiKey: dotenv.env['GOOGLE_MAPS_API_KEY_IOS']!,
-    appId: '1:1066645245892:ios:88bb9882215359dde81e91',
+    apiKey: _env('FIREBASE_API_KEY'),
+    appId: '1:1066645245892:ios:8f0a91a844f187fee81e91',
     messagingSenderId: '1066645245892',
     projectId: 'roomie-cfc03',
     databaseURL: 'https://roomie-cfc03-default-rtdb.firebaseio.com/',
@@ -58,8 +70,19 @@ class DefaultFirebaseOptions {
   );
 
   static final FirebaseOptions web = FirebaseOptions(
-    apiKey: dotenv.env['GOOGLE_MAPS_API_KEY_WEB']!,
-    appId: '1:1066645245892:web:7782da71e8896be4e81e91',
+    apiKey: _env('FIREBASE_API_KEY'),
+    appId: '1:1066645245892:web:462cf265fd241a9de81e91',
+    messagingSenderId: '1066645245892',
+    projectId: 'roomie-cfc03',
+    authDomain: 'roomie-cfc03.firebaseapp.com',
+    databaseURL: 'https://roomie-cfc03-default-rtdb.firebaseio.com/',
+    storageBucket: 'roomie-cfc03.firebasestorage.app',
+    measurementId: 'G-CLXKM3E66E',
+  );
+
+  static final FirebaseOptions windows = FirebaseOptions(
+    apiKey: _env('FIREBASE_API_KEY'),
+    appId: '1:1066645245892:web:015767bf67bd8955e81e91',
     messagingSenderId: '1066645245892',
     projectId: 'roomie-cfc03',
     authDomain: 'roomie-cfc03.firebaseapp.com',

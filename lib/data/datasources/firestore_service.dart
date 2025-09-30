@@ -131,4 +131,67 @@ class FirestoreService {
       return null;
     }
   }
+
+  // Follow a user
+  Future<void> followUser(String currentUserId, String userIdToFollow) async {
+    // Add to current user's following list
+    await _firestore
+        .collection('users')
+        .doc(currentUserId)
+        .collection('following')
+        .doc(userIdToFollow)
+        .set({'timestamp': FieldValue.serverTimestamp()});
+
+    // Add to the other user's followers list
+    await _firestore
+        .collection('users')
+        .doc(userIdToFollow)
+        .collection('followers')
+        .doc(currentUserId)
+        .set({'timestamp': FieldValue.serverTimestamp()});
+  }
+
+  // Unfollow a user
+  Future<void> unfollowUser(String currentUserId, String userIdToUnfollow) async {
+    // Remove from current user's following list
+    await _firestore
+        .collection('users')
+        .doc(currentUserId)
+        .collection('following')
+        .doc(userIdToUnfollow)
+        .delete();
+
+    // Remove from the other user's followers list
+    await _firestore
+        .collection('users')
+        .doc(userIdToUnfollow)
+        .collection('followers')
+        .doc(currentUserId)
+        .delete();
+  }
+
+  // Check if a user is following another
+  Future<bool> isFollowing(String currentUserId, String userIdToCheck) async {
+    final doc = await _firestore
+        .collection('users')
+        .doc(currentUserId)
+        .collection('following')
+        .doc(userIdToCheck)
+        .get();
+    return doc.exists;
+  }
+
+  // Get following count
+  Future<int> getFollowingCount(String userId) async {
+    final snapshot =
+        await _firestore.collection('users').doc(userId).collection('following').get();
+    return snapshot.size;
+  }
+
+  // Get followers count
+  Future<int> getFollowersCount(String userId) async {
+    final snapshot =
+        await _firestore.collection('users').doc(userId).collection('followers').get();
+    return snapshot.size;
+  }
 }

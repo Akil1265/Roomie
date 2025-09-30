@@ -1,13 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:roomie/services/groups_service.dart';
-import 'package:roomie/services/enhanced_geocoding_service.dart';
-
-import 'package:geolocator/geolocator.dart';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:roomie/screens/map_picker_s.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:roomie/screens/location/map_picker_s.dart';
+import 'package:roomie/services/enhanced_geocoding_service.dart';
+import 'package:roomie/services/groups_service.dart';
+
+import 'dart:io';
 
 class CreateGroupScreen extends StatefulWidget {
   const CreateGroupScreen({super.key});
