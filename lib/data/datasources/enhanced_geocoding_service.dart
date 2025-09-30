@@ -1,5 +1,5 @@
 import 'package:geocoding/geocoding.dart';
-import '../models/group_model.dart';
+import 'package:roomie/data/models/group_model.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 

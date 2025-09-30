@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:roomie/services/cloudinary_service.dart';
+import 'package:roomie/data/datasources/cloudinary_service.dart';
 
 /// New profile image service using Cloudinary.
 /// Legacy MongoDB logic removed. All calls now return a Cloudinary URL.

@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:roomie/services/auth_service.dart';
-import 'package:roomie/services/firestore_service.dart';
-import 'package:roomie/widgets/roomie_loading_widget.dart';
-import 'package:roomie/screens/profile/user_details_s.dart';
+import 'package:roomie/data/datasources/auth_service.dart';
+import 'package:roomie/data/datasources/firestore_service.dart';
+import 'package:roomie/presentation/widgets/roomie_loading_widget.dart';
+import 'package:roomie/presentation/screens/profile/user_details_s.dart';
 
 class OtpScreen extends StatefulWidget {
   final String verificationId;

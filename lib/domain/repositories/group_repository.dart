@@ -1,7 +1,7 @@
-import '../entities/group_entity.dart';
-import '../entities/user_entity.dart';
+import 'package:roomie/domain/entities/group_entity.dart';
+import 'package:roomie/domain/entities/user_entity.dart';
 import 'user_repository.dart';
-import '../../core/errors/failures.dart';
+import 'package:roomie/core/errors/failures.dart';
 
 /// Group Repository Interface
 /// Defines contract for group data operations

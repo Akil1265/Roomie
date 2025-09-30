@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:roomie/models/user_model.dart';
-import 'package:roomie/screens/profile/edit_profile_s.dart';
-import 'package:roomie/services/auth_service.dart';
-import 'package:roomie/services/firestore_service.dart';
-import 'package:roomie/services/profile_image_notifier.dart';
-import 'package:roomie/widgets/profile_image_widget.dart';
+import 'package:roomie/data/models/user_model.dart';
+import 'package:roomie/presentation/screens/profile/edit_profile_s.dart';
+import 'package:roomie/data/datasources/auth_service.dart';
+import 'package:roomie/data/datasources/firestore_service.dart';
+import 'package:roomie/data/datasources/profile_image_notifier.dart';
+import 'package:roomie/presentation/widgets/profile_image_widget.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});

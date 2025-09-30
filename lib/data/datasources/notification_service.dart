@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:roomie/models/notification_model.dart';
-import 'package:roomie/services/auth_service.dart';
+import 'package:roomie/data/models/notification_model.dart';
+import 'package:roomie/data/datasources/auth_service.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();

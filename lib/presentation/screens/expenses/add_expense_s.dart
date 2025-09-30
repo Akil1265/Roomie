@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:roomie/models/expense_model.dart';
-import 'package:roomie/services/expense_service.dart';
-import 'package:roomie/services/auth_service.dart';
+import 'package:roomie/data/models/expense_model.dart';
+import 'package:roomie/data/datasources/expense_service.dart';
+import 'package:roomie/data/datasources/auth_service.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   final String groupId;

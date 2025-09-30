@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:roomie/widgets/roomie_loading_widget.dart';
+import 'package:roomie/presentation/widgets/roomie_loading_widget.dart';
 
 class TestLoadingScreen extends StatelessWidget {
   const TestLoadingScreen({super.key});

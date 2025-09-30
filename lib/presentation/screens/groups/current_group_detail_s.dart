@@ -2,9 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:roomie/screens/groups/join_requests_s.dart';
-import 'package:roomie/screens/profile/other_user_profile_s.dart';
-import 'package:roomie/services/firestore_service.dart';
+import 'package:roomie/presentation/screens/groups/join_requests_s.dart';
+import 'package:roomie/presentation/screens/profile/other_user_profile_s.dart';
+import 'package:roomie/data/datasources/firestore_service.dart';
 
 class CurrentGroupDetailScreen extends StatefulWidget {
   final Map<String, dynamic> group;

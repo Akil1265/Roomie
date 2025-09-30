@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:roomie/services/image_helper.dart';
-import 'package:roomie/services/profile_image_notifier.dart';
+import 'package:roomie/data/datasources/image_helper.dart';
+import 'package:roomie/data/datasources/profile_image_notifier.dart';
 
 /// Displays a profile image from a Cloudinary URL (or placeholder).
 /// Listens to global ProfileImageNotifier for updates.

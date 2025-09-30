@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:roomie/screens/chat/chat_screen.dart';
-import 'package:roomie/screens/chat/group_chat_s.dart';
-import 'package:roomie/services/messages_service.dart';
-import 'package:roomie/widgets/roomie_loading_widget.dart';
+import 'package:roomie/presentation/screens/chat/chat_screen.dart';
+import 'package:roomie/presentation/screens/chat/group_chat_s.dart';
+import 'package:roomie/data/datasources/messages_service.dart';
+import 'package:roomie/presentation/widgets/roomie_loading_widget.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class MessagesPage extends StatefulWidget {

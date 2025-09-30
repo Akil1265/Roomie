@@ -2,9 +2,9 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:roomie/models/message_model.dart';
-import 'package:roomie/models/chat_model.dart';
-import 'package:roomie/services/auth_service.dart';
+import 'package:roomie/data/models/message_model.dart';
+import 'package:roomie/data/models/chat_model.dart';
+import 'package:roomie/data/datasources/auth_service.dart';
 
 class ChatService {
   final FirebaseDatabase _database = FirebaseDatabase.instanceFor(

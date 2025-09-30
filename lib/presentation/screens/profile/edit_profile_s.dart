@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:roomie/services/firestore_service.dart';
-import 'package:roomie/services/auth_service.dart';
-import 'package:roomie/models/user_model.dart';
-import 'package:roomie/widgets/profile_image_widget.dart';
+import 'package:roomie/data/datasources/firestore_service.dart';
+import 'package:roomie/data/datasources/auth_service.dart';
+import 'package:roomie/data/models/user_model.dart';
+import 'package:roomie/presentation/widgets/profile_image_widget.dart';
 import 'dart:io';
 
 class EditProfileScreen extends StatefulWidget {

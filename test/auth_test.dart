@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:roomie/services/auth_service.dart';
+import 'package:roomie/data/datasources/auth_service.dart';
 
 void main() {
   group('GoogleSignInResult', () {

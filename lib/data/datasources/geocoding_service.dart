@@ -1,5 +1,5 @@
 import 'package:geocoding/geocoding.dart';
-import '../models/group_model.dart';
+import 'package:roomie/data/models/group_model.dart';
 
 class GeocodingService {
   static final GeocodingService _instance = GeocodingService._internal();

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:roomie/models/expense_model.dart';
+import 'package:roomie/data/models/expense_model.dart';
 
 class BalanceTile extends StatelessWidget {
   final UserBalance balance;

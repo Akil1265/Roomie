@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:roomie/screens/location/map_picker_s.dart';
-import 'package:roomie/services/enhanced_geocoding_service.dart';
-import 'package:roomie/services/groups_service.dart';
+import 'package:roomie/presentation/screens/location/map_picker_s.dart';
+import 'package:roomie/data/datasources/enhanced_geocoding_service.dart';
+import 'package:roomie/data/datasources/groups_service.dart';
 
 import 'dart:io';
 

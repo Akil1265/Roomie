@@ -104,7 +104,7 @@ abstract class BaseServiceImpl implements BaseService {
   /// Check if service is ready to use
   void ensureInitialized() {
     if (!isInitialized) {
-      throw StateError('Service ${serviceName} is not initialized');
+      throw StateError('Service $serviceName is not initialized');
     }
   }
 }

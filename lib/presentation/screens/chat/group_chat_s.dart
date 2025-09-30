@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:roomie/services/auth_service.dart';
-import 'package:roomie/services/chat_service.dart';
+import 'package:roomie/data/datasources/auth_service.dart';
+import 'package:roomie/data/datasources/chat_service.dart';
 
 class GroupChatScreen extends StatefulWidget {
   final Map<String, dynamic> group;

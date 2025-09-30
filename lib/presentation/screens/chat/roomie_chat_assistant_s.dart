@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:roomie/services/gemini_service.dart';
-import 'package:roomie/services/auth_service.dart';
+import 'package:roomie/data/datasources/gemini_service.dart';
+import 'package:roomie/data/datasources/auth_service.dart';
 
 class RoomieChatAssistantScreen extends StatefulWidget {
   final bool isModal;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:roomie/services/auth_service.dart';
-import 'package:roomie/services/firestore_service.dart';
+import 'package:roomie/data/datasources/auth_service.dart';
+import 'package:roomie/data/datasources/firestore_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 

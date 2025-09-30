@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:roomie/models/user_model.dart';
-import 'package:roomie/services/firestore_service.dart';
-import 'package:roomie/services/chat_manager.dart';
-import 'package:roomie/screens/chat/chat_screen.dart';
+import 'package:roomie/data/models/user_model.dart';
+import 'package:roomie/data/datasources/firestore_service.dart';
+import 'package:roomie/data/datasources/chat_manager.dart';
+import 'package:roomie/presentation/screens/chat/chat_screen.dart';
 
 class OtherUserProfileScreen extends StatefulWidget {
   final String userId;

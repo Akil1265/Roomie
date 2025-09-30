@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:roomie/services/groups_service.dart';
+import 'package:roomie/data/datasources/groups_service.dart';
 
 class JoinRequestsScreen extends StatefulWidget {
   final Map<String, dynamic> group;

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:roomie/services/auth_service.dart';
-import 'package:roomie/services/chat_service.dart';
-import 'package:roomie/widgets/roomie_loading_widget.dart';
+import 'package:roomie/data/datasources/auth_service.dart';
+import 'package:roomie/data/datasources/chat_service.dart';
+import 'package:roomie/presentation/widgets/roomie_loading_widget.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:roomie/services/cloudinary_service.dart';
+import 'package:roomie/data/datasources/cloudinary_service.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 

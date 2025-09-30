@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/roomie_loading_widget.dart';
+import 'package:roomie/presentation/widgets/roomie_loading_widget.dart';
 
 /// Helper class to show loading dialogs and overlays throughout the app
 class RoomieLoadingHelper {

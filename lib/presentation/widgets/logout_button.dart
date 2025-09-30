@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:roomie/services/auth_service.dart';
+import 'package:roomie/data/datasources/auth_service.dart';
 
 class LogoutButton extends StatelessWidget {
   const LogoutButton({super.key});

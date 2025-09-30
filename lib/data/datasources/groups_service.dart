@@ -2,10 +2,10 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
-import 'package:roomie/services/cloudinary_service.dart';
-import 'package:roomie/services/auth_service.dart';
+import 'package:roomie/data/datasources/cloudinary_service.dart';
+import 'package:roomie/data/datasources/auth_service.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:roomie/services/notification_service.dart';
+import 'package:roomie/data/datasources/notification_service.dart';
 
 class GroupsService {
   final _firestore = FirebaseFirestore.instance;

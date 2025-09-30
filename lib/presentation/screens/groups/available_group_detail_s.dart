@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:roomie/services/auth_service.dart';
-import 'package:roomie/services/groups_service.dart';
+import 'package:roomie/data/datasources/auth_service.dart';
+import 'package:roomie/data/datasources/groups_service.dart';
 
 class AvailableGroupDetailScreen extends StatefulWidget {
   final Map<String, dynamic> group;

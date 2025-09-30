@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:roomie/models/notification_model.dart';
-import 'package:roomie/screens/groups/join_requests_s.dart';
-import 'package:roomie/services/auth_service.dart';
-import 'package:roomie/services/groups_service.dart';
-import 'package:roomie/services/notification_service.dart';
+import 'package:roomie/data/models/notification_model.dart';
+import 'package:roomie/presentation/screens/groups/join_requests_s.dart';
+import 'package:roomie/data/datasources/auth_service.dart';
+import 'package:roomie/data/datasources/groups_service.dart';
+import 'package:roomie/data/datasources/notification_service.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class NotificationsScreen extends StatelessWidget {

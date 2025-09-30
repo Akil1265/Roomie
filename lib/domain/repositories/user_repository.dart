@@ -1,5 +1,5 @@
-import '../entities/user_entity.dart';
-import '../../core/errors/failures.dart';
+import 'package:roomie/domain/entities/user_entity.dart';
+import 'package:roomie/core/errors/failures.dart';
 
 /// User Repository Interface
 /// Defines contract for user data operations
@@ -59,6 +59,10 @@ class Either<L, R> {
   }
 
   T fold<T>(T Function(L) leftMapper, T Function(R) rightMapper) {
-    return _isLeft ? leftMapper(_left!) : rightMapper(_right!);
+    if (_isLeft) {
+      return leftMapper(_left as L);
+    } else {
+      return rightMapper(_right as R);
+    }
   }
 }

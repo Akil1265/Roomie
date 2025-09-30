@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:roomie/models/expense_model.dart';
+import 'package:roomie/data/models/expense_model.dart';
 import 'package:intl/intl.dart';
 
 class ExpenseCard extends StatelessWidget {

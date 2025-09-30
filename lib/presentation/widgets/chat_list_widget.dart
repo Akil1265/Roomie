@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:roomie/models/base_chat.dart';
-import 'package:roomie/services/chat_manager.dart';
-import 'package:roomie/screens/chat/chat_screen.dart';
+import 'package:roomie/data/models/base_chat.dart';
+import 'package:roomie/data/datasources/chat_manager.dart';
+import 'package:roomie/presentation/screens/chat/chat_screen.dart';
 
 /// Reusable chat list widget that uses OOP principles
 /// This widget can display both individual and group chats

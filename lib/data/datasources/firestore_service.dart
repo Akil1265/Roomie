@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:roomie/services/profile_image_service.dart';
-import 'package:roomie/services/profile_image_notifier.dart';
+import 'package:roomie/data/datasources/profile_image_service.dart';
+import 'package:roomie/data/datasources/profile_image_notifier.dart';
 
 class FirestoreService {
   final _firestore = FirebaseFirestore.instance;

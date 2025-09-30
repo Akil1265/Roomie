@@ -1,7 +1,6 @@
-import 'package:roomie/models/base_chat.dart';
-import 'package:roomie/services/chat_service.dart';
+import 'package:roomie/data/models/base_chat.dart';
+import 'package:roomie/data/datasources/chat_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:roomie/models/message_model.dart';
 
 /// ChatManager class that implements OOP principles for managing different chat types
 /// This provides a unified interface for all chat operations
