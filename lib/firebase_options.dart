@@ -13,8 +13,8 @@ String _env(String key) {
     // dotenv not loaded, use fallback
   }
   
-  // Fallback to hardcoded Firebase API key for mobile
-  return 'AIzaSyAg7tEw-E93qmlQD584-rAKK-F2UkD8GBY';
+  // SECURITY: No hardcoded API keys! Must be provided via environment variables
+  throw Exception('Firebase API key not found! Please set FIREBASE_API_KEY in your .env file');
 }
 
 class DefaultFirebaseOptions {
