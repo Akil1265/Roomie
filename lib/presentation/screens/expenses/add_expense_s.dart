@@ -25,11 +25,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Expense'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
         elevation: 0,
       ),
       body: Form(

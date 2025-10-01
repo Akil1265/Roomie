@@ -30,7 +30,9 @@ class RoomieLoadingWidget extends StatelessWidget {
               width: loadingSize,
               height: loadingSize,
               child: Lottie.asset(
-                'assets/Roomie-loading.json',
+                Theme.of(context).brightness == Brightness.dark
+                    ? 'assets/Roomie-loading-dark.json'
+                    : 'assets/Roomie-loading-light.json',
                 width: loadingSize,
                 height: loadingSize,
                 fit: BoxFit.contain,
@@ -49,7 +51,7 @@ class RoomieLoadingWidget extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                   color:
                       Theme.of(context).textTheme.bodyMedium?.color ??
-                      Colors.grey.shade600,
+                      Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -74,7 +76,9 @@ class RoomieLoadingSmall extends StatelessWidget {
       width: size,
       height: size,
       child: Lottie.asset(
-        'assets/Roomie-loading.json',
+        Theme.of(context).brightness == Brightness.dark
+            ? 'assets/Roomie loading-dark.json'
+            : 'assets/Roomie-loading-light.json',
         width: size,
         height: size,
         fit: BoxFit.contain,
@@ -101,7 +105,7 @@ class RoomieFullScreenLoading extends StatelessWidget {
     return PopScope(
       canPop: canDismiss,
       child: Container(
-        color: Colors.black.withValues(alpha: 0.7),
+  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
         child: RoomieLoadingWidget(size: 120, text: text, showText: true),
       ),
     );

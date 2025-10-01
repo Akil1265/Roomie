@@ -157,10 +157,12 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
     } catch (e) {
       // Show error message
       if (mounted) {
+        final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to open chat: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: colorScheme.error,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -169,23 +171,34 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           _user?.name ?? 'Profile',
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: textTheme.titleMedium?.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+              ),
+            )
           : _user == null
               ? const Center(child: Text('User not found.'))
               : SingleChildScrollView(
@@ -195,29 +208,29 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
                     children: [
                       CircleAvatar(
                         radius: 60,
-                        backgroundColor: Colors.grey.shade200,
+                        backgroundColor: colorScheme.surfaceContainerHighest,
                         backgroundImage: _user!.profileImageUrl != null
                             ? NetworkImage(_user!.profileImageUrl!)
                             : null,
                         child: _user!.profileImageUrl == null
-                            ? Icon(Icons.person,
-                                size: 60, color: Colors.grey.shade400)
-                            : null,
+                          ? Icon(Icons.person, size: 60, color: colorScheme.onSurfaceVariant)
+                          : null,
                       ),
                       const SizedBox(height: 20),
                       Text(
                         _user!.name ?? 'No Name',
-                        style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF121417)),
+                        style: textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         _user!.bio ?? 'No bio available.',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                            fontSize: 16, color: Color(0xFF677583)),
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
                       const SizedBox(height: 24),
                       Row(
@@ -227,7 +240,7 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
                           Container(
                             height: 40,
                             width: 1,
-                            color: Colors.grey.shade300,
+                            color: colorScheme.outlineVariant,
                             margin: const EdgeInsets.symmetric(horizontal: 24),
                           ),
                           _buildFollowerInfo('Following', _followingCount),
@@ -244,11 +257,11 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
                                     : _toggleFollow,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: _isFollowing
-                                      ? Colors.grey.shade200
-                                      : const Color(0xFF007AFF),
+                                      ? colorScheme.surfaceContainerHighest
+                                      : colorScheme.primary,
                                   foregroundColor: _isFollowing
-                                      ? Colors.black
-                                      : Colors.white,
+                                      ? colorScheme.onSurface
+                                      : colorScheme.onPrimary,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -256,20 +269,24 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
                                       const EdgeInsets.symmetric(vertical: 14),
                                   elevation: 0,
                                 ),
-                                child: _isProcessingFollow
-                                    ? const SizedBox(
+                child: _isProcessingFollow
+                  ? SizedBox(
                                         height: 20,
                                         width: 20,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
                                           valueColor:
                                               AlwaysStoppedAnimation<Color>(
-                                                  Colors.white),
+                                                  colorScheme.onPrimary),
                                         ))
                                     : Text(
                                         _isFollowing ? 'Unfollow' : 'Follow',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold),
+                                        style: textTheme.titleMedium?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: _isFollowing
+                                              ? colorScheme.onSurface
+                                              : colorScheme.onPrimary,
+                                        ),
                                       ),
                               ),
                             ),
@@ -279,8 +296,8 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
                                 child: ElevatedButton(
                                   onPressed: _openChat,
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.black,
-                                    foregroundColor: Colors.white,
+                                    backgroundColor: colorScheme.secondary,
+                                    foregroundColor: colorScheme.onSecondary,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -288,10 +305,12 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
                                         vertical: 14),
                                     elevation: 0,
                                   ),
-                                  child: const Text(
+                                  child: Text(
                                     'Message',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold),
+                                    style: textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.onSecondary,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -309,34 +328,43 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
   }
 
   Widget _buildFollowerInfo(String label, int count) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Column(
       children: [
         Text(
           count.toString(),
-          style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF121417)),
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(fontSize: 14, color: Color(0xFF677583)),
+          style: textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
   }
 
   Widget _buildInfoSection() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'User Information',
-          style: TextStyle(
-            fontSize: 20,
+          style: textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Color(0xFF121417),
+            color: colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 16),
@@ -358,26 +386,30 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
-          Icon(icon, color: Colors.grey.shade600, size: 20),
+          Icon(icon, color: colorScheme.onSurfaceVariant, size: 20),
           const SizedBox(width: 16),
           Text(
             label,
-            style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey.shade700),
+            style: textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
           const Spacer(),
           Text(
             value,
-            style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF121417)),
+            style: textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
           ),
         ],
       ),

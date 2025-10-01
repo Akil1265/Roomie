@@ -69,13 +69,16 @@ class _MessagesPageState extends State<MessagesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       body: Column(
         children: [
           // Header with title
           Container(
-            color: Colors.white,
+            color: colorScheme.surface,
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.only(
@@ -84,13 +87,12 @@ class _MessagesPageState extends State<MessagesPage> {
                   top: 20.0,
                   bottom: 16.0,
                 ),
-                child: const Align(
+                child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'Messages',
-                    style: TextStyle(
-                      color: Color(0xFF121417),
-                      fontSize: 28,
+                    style: textTheme.headlineSmall?.copyWith(
+                      color: colorScheme.onSurface,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -101,7 +103,7 @@ class _MessagesPageState extends State<MessagesPage> {
 
           // Search bar and Filter tabs on same row
           Container(
-            color: Colors.white,
+            color: Colors.transparent,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
             child: Row(
               children: [
@@ -111,20 +113,25 @@ class _MessagesPageState extends State<MessagesPage> {
                   child: Container(
                     height: 44,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.transparent,
                       borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: Colors.grey.shade300, width: 1),
+                      border: Border.all(
+                        color: colorScheme.outlineVariant,
+                        width: 1,
+                      ),
                     ),
                     child: TextField(
                       controller: _searchController,
                       onChanged: _onSearchChanged,
                       decoration: InputDecoration(
                         hintText: '',
-                        prefixIcon: const Icon(
+                        prefixIcon: Icon(
                           Icons.search,
-                          color: Colors.grey,
+                          color: colorScheme.onSurfaceVariant,
                           size: 20,
                         ),
+                        filled: true,
+                        fillColor: Colors.transparent,
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
@@ -176,18 +183,17 @@ class _MessagesPageState extends State<MessagesPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.error_outline,
                           size: 64,
-                          color: Colors.grey,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(height: 16),
-                        const Text(
+                        Text(
                           'Error loading conversations',
-                          style: TextStyle(
-                            fontSize: 18,
+                          style: textTheme.bodyLarge?.copyWith(
                             fontWeight: FontWeight.w500,
-                            color: Colors.grey,
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -202,25 +208,26 @@ class _MessagesPageState extends State<MessagesPage> {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
+                      children: [
                         Icon(
                           Icons.chat_bubble_outline,
                           size: 64,
-                          color: Colors.grey,
+                          color: colorScheme.onSurfaceVariant,
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         Text(
                           'No conversations yet',
-                          style: TextStyle(
-                            fontSize: 18,
+                          style: textTheme.bodyLarge?.copyWith(
                             fontWeight: FontWeight.w500,
-                            color: Colors.grey,
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
                           'Start a conversation by joining a group!',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -244,6 +251,9 @@ class _MessagesPageState extends State<MessagesPage> {
 
   Widget _buildFilterTab(String value, String label) {
     final isSelected = _selectedFilter == value;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -253,13 +263,17 @@ class _MessagesPageState extends State<MessagesPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF121417) : Colors.grey.shade100,
+      color: isSelected
+        ? colorScheme.primary
+        : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey.shade600,
+          style: textTheme.labelLarge?.copyWith(
+            color: isSelected
+                ? colorScheme.onPrimary
+                : colorScheme.onSurfaceVariant,
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -277,13 +291,15 @@ class _MessagesPageState extends State<MessagesPage> {
             : '';
 
     return Container(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
           radius: 24,
           backgroundColor:
-              isGroup ? const Color(0xFF121417) : Colors.grey.shade400,
+              isGroup
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.secondaryContainer,
           backgroundImage:
               conversation['imageUrl'] != null &&
                       conversation['imageUrl'].isNotEmpty
@@ -294,7 +310,9 @@ class _MessagesPageState extends State<MessagesPage> {
                       conversation['imageUrl'].isEmpty
                   ? Icon(
                     isGroup ? Icons.group : Icons.person,
-                    color: Colors.white,
+                    color: isGroup
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(context).colorScheme.onSecondaryContainer,
                     size: 20,
                   )
                   : null,
@@ -304,10 +322,10 @@ class _MessagesPageState extends State<MessagesPage> {
             Expanded(
               child: Text(
                 conversation['name'] ?? 'Unknown',
-                style: const TextStyle(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   fontSize: 16,
-                  color: Color(0xFF121417),
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -315,7 +333,10 @@ class _MessagesPageState extends State<MessagesPage> {
             if (timeText.isNotEmpty)
               Text(
                 timeText,
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 12,
+                ),
               ),
           ],
         ),
@@ -325,7 +346,10 @@ class _MessagesPageState extends State<MessagesPage> {
             const SizedBox(height: 4),
             Text(
               conversation['lastMessage'] ?? 'No messages yet',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 14,
+              ),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
             ),
@@ -333,14 +357,17 @@ class _MessagesPageState extends State<MessagesPage> {
               const SizedBox(height: 2),
               Text(
                 '${conversation['memberCount']} members',
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 12,
+                ),
               ),
             ],
           ],
         ),
         trailing: Icon(
           Icons.chevron_right,
-          color: Colors.grey.shade400,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           size: 20,
         ),
         onTap: () => _openConversation(conversation),

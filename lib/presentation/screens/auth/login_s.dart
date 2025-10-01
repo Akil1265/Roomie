@@ -154,21 +154,28 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     bool isSuccess = false,
     bool isWarning = false,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     Color backgroundColor;
-    Color textColor = Colors.white;
+    Color textColor;
     IconData icon;
 
     if (isError) {
-      backgroundColor = const Color(0xFFE74C3C);
+      backgroundColor = colorScheme.error;
+      textColor = colorScheme.onError;
       icon = Icons.error_outline;
     } else if (isSuccess) {
-      backgroundColor = const Color(0xFF27AE60);
+      backgroundColor = colorScheme.secondary;
+      textColor = colorScheme.onSecondary;
       icon = Icons.check_circle_outline;
     } else if (isWarning) {
-      backgroundColor = const Color(0xFFF39C12);
+      backgroundColor = colorScheme.tertiaryContainer;
+      textColor = colorScheme.onTertiaryContainer;
       icon = Icons.warning_amber_outlined;
     } else {
-      backgroundColor = const Color(0xFF6C5CE7);
+      backgroundColor = colorScheme.primaryContainer;
+      textColor = colorScheme.onPrimaryContainer;
       icon = Icons.info_outline;
     }
 
@@ -181,9 +188,8 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
             Expanded(
               child: Text(
                 message,
-                style: TextStyle(
+                style: theme.textTheme.bodyMedium?.copyWith(
                   color: textColor,
-                  fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -209,8 +215,12 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: SingleChildScrollView(
           child: ConstrainedBox(
@@ -226,7 +236,6 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                 children: [
                   Column(
                     children: [
-                      // Header
                       Padding(
                         padding: const EdgeInsets.only(
                           top: 20,
@@ -240,20 +249,18 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                               child: Text(
                                 'Welcome To Roomie',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: const Color(0xFF101418),
-                                  fontWeight: FontWeight.bold,
+                                style: textTheme.headlineMedium?.copyWith(
+                                  color: colorScheme.onSurface,
+                                  fontWeight: FontWeight.w700,
                                   letterSpacing: -0.015,
-                                  fontSize: 35,
                                 ),
                               ),
                             ),
-                            SizedBox(width: 48), // To balance the back button
+                            const SizedBox(width: 48),
                           ],
                         ),
                       ),
                       const SizedBox(height: 8),
-                      // Phone input
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -265,24 +272,35 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                               child: TextField(
                                 controller: _phoneController,
                                 keyboardType: TextInputType.phone,
-                                style: const TextStyle(
-                                  color: Color(0xFF101418),
-                                  fontSize: 16,
+                                style: textTheme.bodyLarge?.copyWith(
+                                  color: colorScheme.onSurface,
                                 ),
                                 decoration: InputDecoration(
                                   hintText: 'Phone number',
                                   filled: true,
-                                  fillColor: const Color(0xFFEAEDF1),
+                                  fillColor: colorScheme.surfaceContainerHighest,
                                   contentPadding: const EdgeInsets.symmetric(
                                     vertical: 18,
                                     horizontal: 16,
                                   ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide.none,
                                   ),
-                                  hintStyle: const TextStyle(
-                                    color: Color(0xFF5C728A),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(
+                                      color: colorScheme.outlineVariant,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(
+                                      color: colorScheme.primary,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  hintStyle: textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                               ),
@@ -293,7 +311,6 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
-                          vertical: 0,
                         ),
                         child: SizedBox(
                           width: double.infinity,
@@ -301,50 +318,42 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                           child: ElevatedButton(
                             onPressed: _loading ? null : _sendOTP,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFDCE7F3),
-                              foregroundColor: const Color(0xFF101418),
+                              backgroundColor: colorScheme.primary,
+                              foregroundColor: colorScheme.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(32),
                               ),
-                              elevation: 0,
+                              elevation: 1,
+                shadowColor:
+                  colorScheme.primary.withValues(alpha: 0.25),
                             ),
                             child:
                                 _loading
                                     ? const RoomieLoadingSmall(size: 24)
-                                    : const Text(
+                                    : Text(
                                       'Sign up with Phone',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
+                                      style: textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onPrimary,
                                         letterSpacing: 0.015,
                                       ),
                                     ),
                           ),
                         ),
                       ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 16,
-                          vertical: 0,
-                        ),
-                        child: SizedBox(height: 8),
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 0,
+                          vertical: 8,
                         ),
                         child: Text(
                           'Or continue with Google',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Color(0xFF5C728A),
-                            fontSize: 14,
-                            fontWeight: FontWeight.normal,
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
-                      // ✅ Single Google Button - Smart Logic
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -355,56 +364,49 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                           height: 48,
                           child: ElevatedButton.icon(
                             onPressed: _loading ? null : _continueWithGoogle,
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.g_mobiledata,
-                              color: Colors.white,
+                              color: colorScheme.onSecondary,
                               size: 28,
                             ),
-                            label: const Text(
+                            label: Text(
                               'Continue with Google',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                              style: textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSecondary,
                                 letterSpacing: 0.015,
-                                color: Colors.white,
                               ),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF4285F4),
-                              foregroundColor: Colors.white,
+                              backgroundColor: colorScheme.secondary,
+                              foregroundColor: colorScheme.onSecondary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(32),
                               ),
-                              elevation: 2,
-                              shadowColor: const Color(
-                                0xFF4285F4,
-                              ).withValues(alpha: 0.3),
-                              padding: const EdgeInsets.only(left: 0),
+                elevation: 2,
+                shadowColor:
+                  colorScheme.secondary.withValues(alpha: 0.25),
                             ),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  // Terms and bottom padding
                   Column(
-                    children: const [
+                    children: [
                       Padding(
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 16,
-                          vertical: 0,
                         ),
                         child: Text(
                           'By continuing, you agree to our Terms of Service and Privacy Policy',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Color(0xFF5C728A),
-                            fontSize: 14,
-                            fontWeight: FontWeight.normal,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ],

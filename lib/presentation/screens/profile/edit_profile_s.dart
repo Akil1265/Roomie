@@ -8,6 +8,7 @@ import 'package:roomie/data/models/user_model.dart';
 import 'package:roomie/presentation/widgets/profile_image_widget.dart';
 import 'dart:io';
 
+
 class EditProfileScreen extends StatefulWidget {
   final UserModel currentUser;
 
@@ -93,7 +94,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error picking image: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -121,10 +122,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       // Show a specific message if trying to upload image
       if (_selectedXFile != null) {
         if (mounted) {
+          final colorScheme = Theme.of(context).colorScheme;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Uploading profile image...'),
-              backgroundColor: Colors.blue,
+            SnackBar(
+              content: const Text('Uploading profile image...'),
+              backgroundColor: colorScheme.primary,
+              behavior: SnackBarBehavior.floating,
             ),
           );
         }
@@ -158,10 +161,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           });
 
       if (mounted) {
+        final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Profile updated successfully!'),
+            backgroundColor: colorScheme.secondary,
+            behavior: SnackBarBehavior.floating,
           ),
         );
         // Fetch fresh doc to obtain latest profileImageUrl immediately
@@ -178,7 +183,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error updating profile: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -191,21 +196,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Color(0xFF121417)),
+          icon: Icon(Icons.close, color: colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           'Edit Profile',
-          style: TextStyle(
-            color: Color(0xFF121417),
+          style: textTheme.titleMedium?.copyWith(
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.bold,
-            fontSize: 18,
             letterSpacing: -0.015,
           ),
         ),
@@ -215,20 +223,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             onPressed: _isLoading ? null : _saveProfile,
             child:
                 _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Color(0xFF121417),
+                        valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onSurface),
                       ),
                     )
-                    : const Text(
+                    : Text(
                       'Save',
-                      style: TextStyle(
-                        color: Color(0xFF121417),
+                      style: textTheme.titleMedium?.copyWith(
+                        color: colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
                       ),
                     ),
           ),
@@ -249,10 +256,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       imageUrl: _currentProfileImageUrl,
                       localPreviewFile: !kIsWeb ? _selectedImage : null,
                       radius: 60,
-                      placeholder: const Icon(
+                      placeholder: Icon(
                         Icons.person,
                         size: 60,
-                        color: Color(0xFF677583),
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     Positioned(
@@ -262,13 +269,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         onTap: _pickImage,
                         child: Container(
                           padding: const EdgeInsets.all(8),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF121417),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.camera_alt,
-                            color: Colors.white,
+                            color: colorScheme.onPrimary,
                             size: 16,
                           ),
                         ),
@@ -289,10 +296,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ? 'Current profile image'
                         : 'No profile image'),
                 style: TextStyle(
-                  color:
-                      _selectedXFile != null || _selectedImage != null
-                          ? Colors.green
-                          : const Color(0xFF677583),
+                  color: _selectedXFile != null || _selectedImage != null
+                      ? colorScheme.secondary
+                      : colorScheme.onSurfaceVariant,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
@@ -382,15 +388,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     int maxLines = 1,
     String? Function(String?)? validator,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
-            color: Color(0xFF121417),
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
+          style: textTheme.titleSmall?.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 8),
@@ -401,31 +410,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           validator: validator,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: Color(0xFF677583)),
+            hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFF1F2F4)),
+              borderSide: BorderSide(color: colorScheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFF1F2F4)),
+              borderSide: BorderSide(color: colorScheme.outlineVariant),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF121417)),
+              borderSide: BorderSide(color: colorScheme.primary),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red),
+              borderSide: BorderSide(color: colorScheme.error),
             ),
             filled: true,
-            fillColor: const Color(0xFFF8FAFC),
+            fillColor: colorScheme.surfaceContainerHighest,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 12,
             ),
           ),
-          style: const TextStyle(color: Color(0xFF121417), fontSize: 16),
+          style: textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurface,
+            fontSize: 16,
+          ),
         ),
       ],
     );

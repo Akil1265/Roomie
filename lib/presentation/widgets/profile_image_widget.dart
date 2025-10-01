@@ -64,7 +64,7 @@ class _ProfileImageWidgetState extends State<ProfileImageWidget> {
     if (widget.localPreviewFile != null && !kIsWeb) {
       return CircleAvatar(
         radius: widget.radius,
-        backgroundColor: const Color(0xFFF1F2F4),
+  backgroundColor: Theme.of(context).colorScheme.surface,
         backgroundImage: FileImage(widget.localPreviewFile!),
       );
     }
@@ -82,9 +82,9 @@ class _ProfileImageWidgetState extends State<ProfileImageWidget> {
           fit: BoxFit.cover,
           placeholder: CircleAvatar(
             radius: widget.radius,
-            backgroundColor: const Color(0xFFF1F2F4),
+            backgroundColor: Theme.of(context).colorScheme.surface,
             child: widget.placeholder ??
-                Icon(Icons.person, size: widget.radius, color: const Color(0xFF677583)),
+                Icon(Icons.person, size: widget.radius, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ),
       );
@@ -93,9 +93,9 @@ class _ProfileImageWidgetState extends State<ProfileImageWidget> {
     // Legacy / no image fallback
     return CircleAvatar(
       radius: widget.radius,
-      backgroundColor: const Color(0xFFF1F2F4),
+  backgroundColor: Theme.of(context).colorScheme.surface,
       child: widget.placeholder ??
-          Icon(Icons.person, size: widget.radius, color: const Color(0xFF677583)),
+          Icon(Icons.person, size: widget.radius, color: Theme.of(context).colorScheme.onSurfaceVariant),
     );
   }
 }

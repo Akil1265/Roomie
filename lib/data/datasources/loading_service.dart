@@ -32,7 +32,7 @@ class RoomieLoadingHelper {
     return showDialog(
       context: context,
       barrierDismissible: barrierDismissible,
-      barrierColor: Colors.black.withValues(alpha: 0.7),
+      barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.7),
       builder: (context) => PopScope(
         canPop: barrierDismissible,
         child: Center(
@@ -40,11 +40,11 @@ class RoomieLoadingHelper {
             padding: const EdgeInsets.all(24),
             margin: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
                   blurRadius: 10,
                   spreadRadius: 5,
                 ),
@@ -64,17 +64,22 @@ class RoomieLoadingHelper {
   /// Show loading snackbar
   static ScaffoldFeatureController<SnackBar, SnackBarClosedReason>
   showLoadingSnackBar(BuildContext context, {String? message}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
             const RoomieLoadingSmall(size: 20),
             const SizedBox(width: 12),
-            Text(message ?? 'Loading...'),
+            Text(
+              message ?? 'Loading...',
+              style: textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimary),
+            ),
           ],
         ),
         duration: const Duration(seconds: 30), // Long duration for loading
-        backgroundColor: Colors.blue.shade600,
+        backgroundColor: colorScheme.primary,
       ),
     );
   }

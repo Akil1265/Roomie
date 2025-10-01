@@ -119,9 +119,12 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   Widget build(BuildContext context) {
     final phoneNumber = ModalRoute.of(context)?.settings.arguments as String?;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -137,20 +140,20 @@ class _OtpScreenState extends State<OtpScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
+                            color: colorScheme.onSurface.withValues(alpha: 0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
                         ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back_ios_new,
                         size: 18,
-                        color: Color(0xFF101418),
+                        color: colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -159,12 +162,12 @@ class _OtpScreenState extends State<OtpScreen> {
               const SizedBox(height: 40),
 
               // Title and description
-              const Text(
+              Text(
                 'Enter verification code',
-                style: TextStyle(
+                style: textTheme.headlineSmall?.copyWith(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF101418),
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 12),
@@ -172,9 +175,9 @@ class _OtpScreenState extends State<OtpScreen> {
                 phoneNumber != null
                     ? 'We\'ve sent a code to $phoneNumber'
                     : 'We\'ve sent a verification code to your phone',
-                style: const TextStyle(
+                style: textTheme.bodyMedium?.copyWith(
                   fontSize: 16,
-                  color: Color(0xFF5C728A),
+                  color: colorScheme.onSurfaceVariant,
                   height: 1.4,
                 ),
               ),
@@ -188,7 +191,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     width: 45,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEAEDF1),
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: TextField(
@@ -197,15 +200,16 @@ class _OtpScreenState extends State<OtpScreen> {
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
                       maxLength: 1,
-                      style: const TextStyle(
+                      style: textTheme.titleMedium?.copyWith(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF101418),
+                        color: colorScheme.onSurface,
                       ),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         counterText: '',
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.zero,
+                        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                       ),
                       onChanged: (value) {
                         if (value.isNotEmpty) {
@@ -239,20 +243,20 @@ class _OtpScreenState extends State<OtpScreen> {
                     _canResend
                         ? TextButton(
                           onPressed: _resendOTP,
-                          child: const Text(
+                          child: Text(
                             'Resend code',
-                            style: TextStyle(
+                            style: textTheme.bodyMedium?.copyWith(
                               fontSize: 16,
-                              color: Color(0xFF101418),
-                              fontWeight: FontWeight.w500,
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         )
                         : Text(
                           'Resend code in 00:${_secondsRemaining.toString().padLeft(2, '0')}',
-                          style: const TextStyle(
+                          style: textTheme.bodyMedium?.copyWith(
                             fontSize: 16,
-                            color: Color(0xFF5C728A),
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
               ),
@@ -266,8 +270,8 @@ class _OtpScreenState extends State<OtpScreen> {
                 child: ElevatedButton(
                   onPressed: _loading ? null : _verifyOTP,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFDCE7F3),
-                    foregroundColor: const Color(0xFF101418),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),

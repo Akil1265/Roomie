@@ -17,11 +17,11 @@ class GroupCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
@@ -44,7 +44,7 @@ class GroupCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(color: Colors.grey, fontSize: 14),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14),
                 ),
               ],
             ),
@@ -63,9 +63,9 @@ class GroupCard extends StatelessWidget {
                 return Container(
                   width: 70,
                   height: 70,
-                  color: Colors.grey.shade200,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   alignment: Alignment.center,
-                  child: const Icon(Icons.broken_image, color: Colors.grey),
+                  child: Icon(Icons.broken_image, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 );
               },
               loadingBuilder: (context, child, loadingProgress) {
@@ -73,7 +73,7 @@ class GroupCard extends StatelessWidget {
                 return Container(
                   width: 70,
                   height: 70,
-                  color: Colors.grey.shade100,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   alignment: Alignment.center,
                   child: const SizedBox(
                     width: 20,

@@ -17,11 +17,15 @@ class CreateGroupScreen extends StatefulWidget {
 }
 
 class DashedBorderPainter extends CustomPainter {
+  final Color color;
+
+  DashedBorderPainter({required this.color});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint =
         Paint()
-          ..color = const Color(0xFFE0E0E0)
+          ..color = color
           ..strokeWidth = 1.5
           ..style = PaintingStyle.stroke;
 
@@ -214,6 +218,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       _webImageBytes.isNotEmpty ? _webImageBytes.first : null;
 
   Widget _buildPrimaryImagePreview() {
+    final colorScheme = Theme.of(context).colorScheme;
     if (kIsWeb && _primaryWebImageBytes != null) {
       return Image.memory(
         _primaryWebImageBytes!,
@@ -233,8 +238,8 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     }
 
     return Container(
-      color: Colors.grey[300],
-      child: const Icon(Icons.error, color: Colors.grey),
+  color: colorScheme.surfaceContainerHighest,
+      child: Icon(Icons.error, color: colorScheme.onSurfaceVariant),
     );
   }
 
@@ -279,13 +284,16 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                   child: GestureDetector(
                     onTap: () => _removeImage(index),
                     child: Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.black54,
+                      decoration: BoxDecoration(
+            color: Theme.of(context)
+              .colorScheme
+              .scrim
+              .withValues(alpha: 0.54),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.close,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onInverseSurface,
                         size: 18,
                       ),
                     ),
@@ -346,12 +354,15 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(top: 16.0),
                   child: Text(
                     'Select Roommates Count',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
                 Expanded(
@@ -390,8 +401,13 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                         child: OutlinedButton(
                           onPressed: () => Navigator.pop(sheetContext),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.black87,
-                            side: const BorderSide(color: Color(0xFFE0E0E0)),
+                            foregroundColor:
+                                Theme.of(context).colorScheme.onSurface,
+                            side: BorderSide(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .outlineVariant,
+                            ),
                           ),
                           child: const Text('Cancel'),
                         ),
@@ -408,8 +424,10 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                             Navigator.pop(sheetContext);
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF007AFF),
-                            foregroundColor: Colors.white,
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
+                            foregroundColor:
+                                Theme.of(context).colorScheme.onPrimary,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -544,7 +562,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
             content: Text(
               '✅ Address: ${locationData.city}, ${locationData.state}',
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -555,7 +573,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('❌ Geocoding failed: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -668,9 +686,9 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
         print('Room created successfully with ID: $groupId');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Room created successfully!'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('Room created successfully!'),
+              backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );
           Navigator.pop(context);
@@ -678,12 +696,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
+            SnackBar(
+              content: const Text(
                 'Database connection failed. Please check your internet and try again.',
               ),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 4),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              duration: const Duration(seconds: 4),
             ),
           );
         }
@@ -694,7 +712,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('An unexpected error occurred: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
             duration: const Duration(seconds: 4),
           ),
         );
@@ -731,13 +749,15 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     bool readOnly = false,
     VoidCallback? onTap,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey.shade50,
+          color: colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200, width: 1),
+          border: Border.all(color: colorScheme.outlineVariant, width: 1),
         ),
         child: TextField(
           controller: controller,
@@ -747,7 +767,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
-              color: Colors.grey.shade500,
+              color: colorScheme.onSurfaceVariant,
               fontSize: 16,
               fontWeight: FontWeight.w400,
             ),
@@ -758,7 +778,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
               vertical: maxLines > 1 ? 16 : 18,
             ),
           ),
-          style: const TextStyle(color: Color(0xFF121417), fontSize: 16),
+          style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
         ),
       ),
     );
@@ -770,11 +790,13 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     required List<DropdownMenuItem<T>> items,
     required ValueChanged<T?> onChanged,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+  color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200, width: 1),
+        border: Border.all(color: colorScheme.outlineVariant, width: 1),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: DropdownButton<T>(
@@ -782,27 +804,30 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
         hint: Text(
           hint,
           style: TextStyle(
-            color: Colors.grey.shade500,
+            color: colorScheme.onSurfaceVariant,
             fontSize: 16,
             fontWeight: FontWeight.w400,
           ),
         ),
         isExpanded: true,
         underline: const SizedBox(),
-        icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF757575)),
-        dropdownColor: Colors.white,
+        icon: Icon(Icons.keyboard_arrow_down, color: colorScheme.onSurfaceVariant),
+        dropdownColor: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         items: items,
         onChanged: onChanged,
-        style: const TextStyle(color: Color(0xFF121417), fontSize: 16),
+        style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
@@ -810,12 +835,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Page Title
-              const Text(
+              Text(
                 'Create Group',
-                style: TextStyle(
+                style: textTheme.headlineSmall?.copyWith(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF121417),
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 24),
@@ -824,7 +849,9 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
               GestureDetector(
                 onTap: _pickImages,
                 child: CustomPaint(
-                  painter: DashedBorderPainter(),
+                  painter: DashedBorderPainter(
+                    color: colorScheme.outlineVariant,
+                  ),
                   child: AspectRatio(
                     aspectRatio: 16 / 9,
                     child: Container(
@@ -838,29 +865,29 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                                 borderRadius: BorderRadius.circular(11.0),
                                 child: _buildPrimaryImagePreview(),
                               )
-                              : const Column(
+                              : Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(
                                     Icons.cloud_upload_outlined,
                                     size: 48,
-                                    color: Color(0xFFBDBDBD),
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
                                   SizedBox(height: 8),
                                   Text(
                                     'Upload Room Images',
-                                    style: TextStyle(
+                                    style: textTheme.bodyMedium?.copyWith(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
-                                      color: Color(0xFF757575),
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                   SizedBox(height: 4),
                                   Text(
                                     'Supports: JPG, PNG, JPEG (max 6)',
-                                    style: TextStyle(
+                                    style: textTheme.bodySmall?.copyWith(
                                       fontSize: 12,
-                                      color: Color(0xFFBDBDBD),
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ],
@@ -877,12 +904,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
               const SizedBox(height: 24),
 
               // Group Name
-              const Text(
+              Text(
                 'Group Name',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF121417),
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
@@ -893,12 +920,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
               const SizedBox(height: 16),
 
               // Description
-              const Text(
+              Text(
                 'Description',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF121417),
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
@@ -910,12 +937,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
               const SizedBox(height: 16),
 
               // Room Type
-              const Text(
+              Text(
                 'Room Type',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF121417),
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
@@ -938,12 +965,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
               const SizedBox(height: 16),
 
               // Location
-              const Text(
+              Text(
                 'Location',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF121417),
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
@@ -954,9 +981,9 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 onTap: _openLocationPicker,
                 suffixIcon: InkWell(
                   onTap: _openLocationPicker,
-                  child: const Icon(
+                  child: Icon(
                     Icons.location_on_outlined,
-                    color: Color(0xFF007AFF),
+                    color: colorScheme.primary,
                     size: 22,
                   ),
                 ),
@@ -998,12 +1025,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Rent Amount',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF121417),
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -1020,12 +1047,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Advance Amount',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF121417),
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -1047,12 +1074,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Currency',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF121417),
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -1080,12 +1107,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Roommates',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF121417),
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -1104,20 +1131,20 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
               // Amenities Section
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200, width: 1),
+                  border: Border.all(color: colorScheme.outlineVariant, width: 1),
                 ),
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Amenities',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF121417),
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -1145,25 +1172,22 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                                   vertical: 8,
                                 ),
                                 decoration: BoxDecoration(
-                                  color:
-                                      isSelected
-                                          ? const Color(0xFF007AFF)
-                                          : Colors.white,
+                                  color: isSelected
+                                      ? colorScheme.primary
+                                      : colorScheme.surface,
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                    color:
-                                        isSelected
-                                            ? const Color(0xFF007AFF)
-                                            : Colors.grey.shade300,
+                                    color: isSelected
+                                        ? colorScheme.primary
+                                        : colorScheme.outlineVariant,
                                   ),
                                 ),
                                 child: Text(
                                   amenity,
                                   style: TextStyle(
-                                    color:
-                                        isSelected
-                                            ? Colors.white
-                                            : Colors.grey.shade700,
+                                    color: isSelected
+                                        ? colorScheme.onPrimary
+                                        : colorScheme.onSurfaceVariant,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -1184,23 +1208,24 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _createGroup,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF007AFF),
-                    foregroundColor: Colors.white,
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    disabledBackgroundColor: Colors.grey.shade300,
+          disabledBackgroundColor:
+            colorScheme.onSurface.withValues(alpha: 0.12),
                   ),
                   child:
                       _isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                                colorScheme.onPrimary,
                               ),
                             ),
                           )

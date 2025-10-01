@@ -103,8 +103,11 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+  final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -133,20 +136,20 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                    color: colorScheme.surface,
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
+                                        color: colorScheme.onSurface.withAlpha(25),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   ),
                                 ],
                               ),
-                              child: const Icon(
+                                  child: Icon(
                                 Icons.arrow_back_ios_new,
                                 size: 18,
-                                color: Color(0xFF101418),
+                                    color: colorScheme.onSurface,
                               ),
                             ),
                           ),
@@ -157,7 +160,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                                 style: TextStyle(
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF101418),
+                                  color: colorScheme.onSurface,
                                 ),
                               ),
                             ),
@@ -191,12 +194,12 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                                       height: 60,
                                       width: 60,
                                       decoration: BoxDecoration(
-                                        color: Color(0xFFFDE5DB),
+                                        color: colorScheme.surfaceContainerHighest,
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
                                         Icons.person_outline,
-                                        color: Color(0xFFDE8B6C),
+                                        color: colorScheme.primary,
                                         size: 28,
                                       ),
                                     )
@@ -217,7 +220,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                                       ? 'Add profile photo'
                                       : 'Change profile photo',
                                   style: TextStyle(
-                                    color: Color(0xFF101418),
+                                    color: colorScheme.onSurface,
                                     fontSize: 18,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -238,7 +241,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                             decoration: InputDecoration(
                               hintText: 'Username',
                               filled: true,
-                              fillColor: Color(0xFFEAEDF1),
+                                fillColor: colorScheme.surfaceContainerHighest,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide.none,
@@ -246,11 +249,11 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: Color(0xFFDCE7F3),
+                                  color: colorScheme.primary,
                                   width: 2,
                                 ),
                               ),
-                              hintStyle: TextStyle(color: Color(0xFF5C728A)),
+                                hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 18,
@@ -276,7 +279,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                             decoration: InputDecoration(
                               hintText: 'Occupation',
                               filled: true,
-                              fillColor: Color(0xFFEAEDF1),
+                                fillColor: colorScheme.surfaceContainerHighest,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide.none,
@@ -284,11 +287,11 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: Color(0xFFDCE7F3),
+                                  color: colorScheme.primary,
                                   width: 2,
                                 ),
                               ),
-                              hintStyle: TextStyle(color: Color(0xFF5C728A)),
+                                hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 18,
@@ -309,7 +312,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                             decoration: InputDecoration(
                               hintText: 'Age',
                               filled: true,
-                              fillColor: Color(0xFFEAEDF1),
+                                fillColor: colorScheme.surfaceContainerHighest,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide.none,
@@ -317,11 +320,11 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: Color(0xFFDCE7F3),
+                                  color: colorScheme.primary,
                                   width: 2,
                                 ),
                               ),
-                              hintStyle: TextStyle(color: Color(0xFF5C728A)),
+                                hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 18,
@@ -358,7 +361,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
-                                    color: Color(0xFF101418),
+                                    color: colorScheme.onSurface,
                                   ),
                                 ),
                               ),
@@ -368,7 +371,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                                 decoration: InputDecoration(
                                   hintText: 'Tell us about yourself...',
                                   filled: true,
-                                  fillColor: Color(0xFFEAEDF1),
+                                  fillColor: colorScheme.surfaceContainerHighest,
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
                                     borderSide: BorderSide.none,
@@ -376,12 +379,12 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
                                     borderSide: BorderSide(
-                                      color: Color(0xFFDCE7F3),
+                                      color: colorScheme.primary,
                                       width: 2,
                                     ),
                                   ),
                                   hintStyle: TextStyle(
-                                    color: Color(0xFF5C728A),
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
                                   contentPadding: EdgeInsets.symmetric(
                                     horizontal: 16,
@@ -410,12 +413,16 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     height: 48,
                     child:
                         _isLoading
-                            ? const Center(child: CircularProgressIndicator())
+                            ? Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                                ),
+                              )
                             : ElevatedButton(
                               onPressed: _saveUserDetails,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Color(0xFFDCE7F3),
-                                foregroundColor: Color(0xFF101418),
+                                backgroundColor: colorScheme.primary,
+                                foregroundColor: colorScheme.onPrimary,
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(24),
@@ -426,6 +433,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
+                                  color: colorScheme.onPrimary,
                                 ),
                               ),
                             ),

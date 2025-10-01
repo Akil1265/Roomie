@@ -93,18 +93,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF121417)),
+            icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          title: const Text(
+          title: Text(
             'Profile',
             style: TextStyle(
-              color: Color(0xFF121417),
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.bold,
               fontSize: 18,
               letterSpacing: -0.015,
@@ -112,26 +112,26 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
           centerTitle: true,
         ),
-        body: const Center(
-          child: CircularProgressIndicator(color: Color(0xFF121417)),
+        body: Center(
+          child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
         ),
       );
     }
 
     if (_currentUser == null) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF121417)),
+            icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          title: const Text(
+          title: Text(
             'Profile',
             style: TextStyle(
-              color: Color(0xFF121417),
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.bold,
               fontSize: 18,
               letterSpacing: -0.015,
@@ -139,43 +139,46 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
           centerTitle: true,
         ),
-        body: const Center(
+        body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.person_off, size: 64, color: Color(0xFF677583)),
+              Icon(Icons.person_off, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
               SizedBox(height: 16),
               Text(
                 'No user data found',
-                style: TextStyle(fontSize: 18, color: Color(0xFF677583)),
+                style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ],
           ),
         ),
       );
     }
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF121417)),
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           'Profile',
-          style: TextStyle(
-            color: Color(0xFF121417),
+          style: textTheme.titleMedium?.copyWith(
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.bold,
-            fontSize: 18,
             letterSpacing: -0.015,
           ),
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit, color: Color(0xFF121417)),
+            icon: Icon(Icons.edit, color: colorScheme.primary),
             onPressed: () async {
               if (_currentUser != null) {
                 final result = await Navigator.push(
@@ -223,10 +226,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     _currentUser!.profileImageUrl ??
                     _profileImageNotifier.currentImageId,
                 radius: 60,
-                placeholder: const Icon(
+                placeholder: Icon(
                   Icons.person,
                   size: 60,
-                  color: Color(0xFF677583),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
@@ -236,8 +239,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             // User Name
             Text(
               _currentUser!.displayName,
-              style: const TextStyle(
-                color: Color(0xFF121417),
+              style: TextStyle(
+                color: colorScheme.onSurface,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 letterSpacing: -0.015,
@@ -249,7 +252,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             // User Bio
             Text(
               _currentUser!.displayBio,
-              style: const TextStyle(color: Color(0xFF677583), fontSize: 16),
+              style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16),
               textAlign: TextAlign.center,
             ),
 
@@ -315,15 +318,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     _showLogoutDialog();
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF121417),
-                    side: const BorderSide(color: Color(0xFF677583)),
+                      foregroundColor: colorScheme.onSurface,
+                      side: BorderSide(color: colorScheme.outline),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Logout',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
                   ),
                 ),
               ),
@@ -359,22 +365,26 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     required String title,
     required String value,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F2F4)),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFADCBEA).withValues(alpha: 0.2),
+              color: colorScheme.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: const Color(0xFF121417), size: 20),
+            child: Icon(icon, color: colorScheme.primary, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -383,19 +393,17 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Color(0xFF677583),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                  style: textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(
-                    color: Color(0xFF121417),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -410,24 +418,30 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+        final textTheme = theme.textTheme;
+
         return AlertDialog(
-          title: const Text(
+          title: Text(
             'Logout',
-            style: TextStyle(
-              color: Color(0xFF121417),
+            style: textTheme.titleMedium?.copyWith(
+              color: colorScheme.onSurface,
               fontWeight: FontWeight.bold,
             ),
           ),
-          content: const Text(
+          content: Text(
             'Are you sure you want to logout?',
-            style: TextStyle(color: Color(0xFF677583)),
+            style: textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
+              child: Text(
                 'Cancel',
-                style: TextStyle(color: Color(0xFF677583)),
+                style: TextStyle(color: colorScheme.onSurfaceVariant),
               ),
             ),
             TextButton(
@@ -447,13 +461,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     scaffoldMessenger.showSnackBar(
                       SnackBar(
                         content: Text('Error logging out: $e'),
-                        backgroundColor: Colors.red,
+                        backgroundColor: colorScheme.error,
                       ),
                     );
                   }
                 }
               },
-              child: const Text('Logout', style: TextStyle(color: Colors.red)),
+              child: Text('Logout', style: TextStyle(color: colorScheme.error)),
             ),
           ],
         );

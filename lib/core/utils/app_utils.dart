@@ -76,10 +76,16 @@ class AppUtils {
   
   /// Shows snackbar with message
   static void showSnackBar(BuildContext context, String message, {bool isError = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : null,
+        content: Text(
+          message,
+          style: TextStyle(
+            color: isError ? colorScheme.onError : colorScheme.onPrimary,
+          ),
+        ),
+        backgroundColor: isError ? colorScheme.error : colorScheme.primary,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
       ),

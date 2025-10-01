@@ -6,24 +6,42 @@ class LogoutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return ElevatedButton.icon(
       onPressed: () async {
-        // Show confirmation dialog
         final bool? confirmLogout = await showDialog<bool>(
           context: context,
-          builder: (BuildContext context) {
+          builder: (dialogContext) {
             return AlertDialog(
-              title: const Text('Logout'),
-              content: const Text('Are you sure you want to logout?'),
+              title: Text(
+                'Logout',
+                style: Theme.of(dialogContext)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(color: Theme.of(dialogContext).colorScheme.onSurface),
+              ),
+              content: Text(
+                'Are you sure you want to logout?',
+                style: Theme.of(dialogContext)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: Theme.of(dialogContext).colorScheme.onSurfaceVariant),
+              ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSurfaceVariant),
+                  ),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
-                  child: const Text('Logout'),
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: Text(
+                    'Logout',
+                    style: TextStyle(color: Theme.of(dialogContext).colorScheme.error),
+                  ),
                 ),
               ],
             );
@@ -34,27 +52,25 @@ class LogoutButton extends StatelessWidget {
           try {
             await AuthService().signOut();
             if (context.mounted) {
-              // Navigate back to login screen and clear all previous routes
-              Navigator.of(
-                context,
-              ).pushNamedAndRemoveUntil('/', (route) => false);
+              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
             }
           } catch (e) {
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Logout failed: $e'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: colorScheme.error,
+                  behavior: SnackBarBehavior.floating,
                 ),
               );
             }
           }
         }
       },
-      icon: const Icon(Icons.logout, color: Colors.white),
-      label: const Text('Logout', style: TextStyle(color: Colors.white)),
+      icon: Icon(Icons.logout, color: colorScheme.onError),
+      label: Text('Logout', style: TextStyle(color: colorScheme.onError)),
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.red,
+        backgroundColor: colorScheme.error,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),

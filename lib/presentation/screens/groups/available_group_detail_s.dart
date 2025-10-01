@@ -85,10 +85,11 @@ class _AvailableGroupDetailScreenState
       final success = await _groupsService.sendJoinRequest(widget.group['id']);
 
       if (success && mounted) {
+        final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Join request sent successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Join request sent successfully!'),
+            backgroundColor: colorScheme.primary,
           ),
         );
         Navigator.pop(context);
@@ -98,10 +99,11 @@ class _AvailableGroupDetailScreenState
     } catch (e) {
       print('Error sending join request: $e');
       if (mounted) {
+        final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -142,13 +144,16 @@ class _AvailableGroupDetailScreenState
       advanceAmount = _toDouble(rentRaw['advanceAmount']);
     }
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 280.0,
-            backgroundColor: Colors.white,
+            backgroundColor: colorScheme.surface,
             elevation: 0,
             pinned: true,
             stretch: true,
@@ -162,7 +167,7 @@ class _AvailableGroupDetailScreenState
               ),
             ),
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
               onPressed: () => Navigator.of(context).pop(),
             ),
           ),
@@ -179,10 +184,10 @@ class _AvailableGroupDetailScreenState
                       Expanded(
                         child: Text(
                           widget.group['name'] ?? 'Unnamed Group',
-                          style: const TextStyle(
+                          style: textTheme.headlineSmall?.copyWith(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF121417),
+                            color: colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -193,14 +198,14 @@ class _AvailableGroupDetailScreenState
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE0F2F1),
+                          color: colorScheme.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Available',
-                          style: TextStyle(
+                          style: textTheme.labelSmall?.copyWith(
                             fontSize: 12,
-                            color: Colors.teal,
+                            color: colorScheme.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -210,20 +215,20 @@ class _AvailableGroupDetailScreenState
                   const SizedBox(height: 16),
                   Text(
                     widget.group['description'] ?? 'No description available.',
-                    style: const TextStyle(
+                    style: textTheme.bodyLarge?.copyWith(
                       fontSize: 16,
-                      color: Color(0xFF677583),
+                      color: colorScheme.onSurfaceVariant,
                       height: 1.5,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Divider(height: 1, color: Color(0xFFE8E8E8)),
+                  Divider(height: 1, color: colorScheme.outlineVariant),
                   const SizedBox(height: 24),
                   _buildFullWidthInfoCard(
                     icon: Icons.location_on_outlined,
                     title: 'Location',
                     value: widget.group['location'] ?? 'Not specified',
-                    color: Colors.blue,
+                    color: colorScheme.primary,
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -233,7 +238,7 @@ class _AvailableGroupDetailScreenState
                           icon: Icons.attach_money,
                           title: 'Rent',
                           value: _formatRent(rentAmount, rentCurrency),
-                          color: Colors.green,
+                          color: colorScheme.secondary,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -242,7 +247,7 @@ class _AvailableGroupDetailScreenState
                           icon: Icons.account_balance_wallet_outlined,
                           title: 'Advance',
                           value: _formatAdvance(advanceAmount, rentCurrency),
-                          color: Colors.deepPurple,
+                          color: colorScheme.tertiary,
                         ),
                       ),
                     ],
@@ -256,7 +261,7 @@ class _AvailableGroupDetailScreenState
                           title: 'Roommates',
                           value:
                               '${widget.group['memberCount'] ?? 0} / ${widget.group['capacity']?.toString() ?? 'N/A'}',
-                          color: Colors.blueGrey,
+                          color: colorScheme.secondaryContainer,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -265,7 +270,7 @@ class _AvailableGroupDetailScreenState
                           icon: Icons.home_outlined,
                           title: 'Room Type',
                           value: widget.group['roomType'] ?? 'N/A',
-                          color: Colors.teal,
+                          color: colorScheme.primary,
                         ),
                       ),
                     ],
@@ -277,17 +282,17 @@ class _AvailableGroupDetailScreenState
                     value: _formatTimestamp(
                       widget.group['createdAt'] as Timestamp?,
                     ),
-                    color: Colors.orange,
+                    color: colorScheme.secondary,
                   ),
                   const SizedBox(height: 24),
                   if (widget.group['amenities'] != null &&
                       (widget.group['amenities'] as List).isNotEmpty) ...[
-                    const Text(
+                    Text(
                       'Amenities',
-                      style: TextStyle(
+                      style: textTheme.titleLarge?.copyWith(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF121417),
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -304,9 +309,9 @@ class _AvailableGroupDetailScreenState
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Color(0xFFE8E8E8), width: 1)),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          border: Border(top: BorderSide(color: colorScheme.outlineVariant, width: 1)),
         ),
         child: SizedBox(
           width: double.infinity,
@@ -315,24 +320,24 @@ class _AvailableGroupDetailScreenState
             onPressed: _isLoading ? null : _requestToJoin,
             style: ElevatedButton.styleFrom(
               backgroundColor:
-                  _isLoading
-                      ? const Color(0xFFCCCCCC)
-                      : const Color(0xFF007AFF),
-              foregroundColor: Colors.white,
+                  _isLoading ? colorScheme.outline : colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              disabledBackgroundColor: const Color(0xFFE0E0E0),
+              disabledBackgroundColor: colorScheme.outlineVariant,
             ),
             child:
                 _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                       height: 24,
                       width: 24,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.5,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colorScheme.onPrimary,
+                        ),
                       ),
                     )
                     : const Text(
@@ -377,6 +382,7 @@ class _AvailableGroupDetailScreenState
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(images.length, (index) {
+                final colorScheme = Theme.of(context).colorScheme;
                 return Container(
                   width: 8,
                   height: 8,
@@ -385,8 +391,8 @@ class _AvailableGroupDetailScreenState
                     shape: BoxShape.circle,
                     color:
                         _currentImageIndex == index
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.5),
+                            ? colorScheme.onInverseSurface
+                            : colorScheme.onInverseSurface.withValues(alpha: 0.5),
                   ),
                 );
               }),
@@ -397,15 +403,18 @@ class _AvailableGroupDetailScreenState
   }
 
   Widget _buildPlaceholderImage() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      color: const Color(0xFFF5F5F5),
-      child: const Center(
-        child: Icon(Icons.group, color: Colors.grey, size: 60),
+      color: colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: Icon(Icons.group, color: colorScheme.onSurfaceVariant, size: 60),
       ),
     );
   }
 
   Widget _buildAmenitiesGrid(List<String> amenities) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -414,15 +423,15 @@ class _AvailableGroupDetailScreenState
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: colorScheme.outlineVariant),
               ),
               child: Text(
                 amenity,
-                style: TextStyle(
+                style: textTheme.bodySmall?.copyWith(
                   fontSize: 12,
-                  color: Colors.grey.shade800,
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -437,15 +446,17 @@ class _AvailableGroupDetailScreenState
     required String value,
     required Color color,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE8E8E8)),
+        border: Border.all(color: colorScheme.outlineVariant),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
@@ -462,18 +473,18 @@ class _AvailableGroupDetailScreenState
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: textTheme.bodyMedium?.copyWith(
                     fontSize: 14,
-                    color: Color(0xFF677583),
+                    color: colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: textTheme.titleMedium?.copyWith(
                     fontSize: 16,
-                    color: Color(0xFF121417),
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -491,15 +502,17 @@ class _AvailableGroupDetailScreenState
     required String value,
     required Color color,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE8E8E8)),
+        border: Border.all(color: colorScheme.outlineVariant),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
@@ -515,9 +528,9 @@ class _AvailableGroupDetailScreenState
               const SizedBox(width: 8),
               Text(
                 title,
-                style: const TextStyle(
+                style: textTheme.bodyMedium?.copyWith(
                   fontSize: 14,
-                  color: Color(0xFF677583),
+                  color: colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -526,9 +539,9 @@ class _AvailableGroupDetailScreenState
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
+            style: textTheme.titleMedium?.copyWith(
               fontSize: 16,
-              color: Color(0xFF121417),
+              color: colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
             maxLines: 2,

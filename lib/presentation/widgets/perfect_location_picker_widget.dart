@@ -272,7 +272,7 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -284,7 +284,7 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: Colors.green,
+          backgroundColor: Theme.of(context).colorScheme.secondary,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -405,6 +405,11 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final secondaryColor = Theme.of(context).colorScheme.secondary;
+    final primaryContainerColor = Theme.of(context).colorScheme.primaryContainer;
+    final onSurfaceVariantColor = Theme.of(context).colorScheme.onSurfaceVariant;
+
     return Scaffold(
       body: FadeTransition(
         opacity: _fadeAnimation,
@@ -419,10 +424,10 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                 bottom: 12,
               ),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -435,22 +440,22 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                     onTap: () => Navigator.pop(context),
                     child: Container(
                       padding: const EdgeInsets.all(8),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back,
-                        color: Colors.black87,
+                        color: Theme.of(context).colorScheme.onSurface,
                         size: 24,
                       ),
                     ),
                   ),
                   const SizedBox(width: 16),
                   // Title
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Select Location',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -465,14 +470,14 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                   // Map-like Background
                   Container(
                     width: double.infinity,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Color(0xFF4285F4), // Google Blue
-                          Color(0xFF34A853), // Google Green
-                          Color(0xFF1976D2), // Darker Blue
+                          primaryColor,
+                          secondaryColor,
+                          primaryContainerColor,
                         ],
                       ),
                     ),
@@ -481,7 +486,7 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                         // Grid pattern to mimic map
                         CustomPaint(
                           size: Size(MediaQuery.of(context).size.width, 400),
-                          painter: MapGridPainter(),
+                          painter: MapGridPainter(gridColor: Theme.of(context).colorScheme.outlineVariant.withAlpha(25)),
                         ),
                         // Map markers/pins scattered around
                         ...List.generate(8, (index) {
@@ -502,7 +507,7 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                               width: 8,
                               height: 8,
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.3),
+                                color: Theme.of(context).colorScheme.surface.withAlpha(76),
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -518,20 +523,20 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                                 width: 80,
                                 height: 80,
                                 decoration: BoxDecoration(
-                                  color: Colors.red,
+                                  color: Theme.of(context).colorScheme.primary,
                                   borderRadius: BorderRadius.circular(40),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.3),
+                                      color: Theme.of(context).colorScheme.onSurface.withAlpha(76),
                                       blurRadius: 10,
                                       offset: const Offset(0, 5),
                                     ),
                                   ],
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.location_on,
                                   size: 50,
-                                  color: Colors.white,
+                                  color: Theme.of(context).colorScheme.onPrimary,
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -539,20 +544,20 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: Theme.of(context).colorScheme.surface,
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.1),
+                                      color: Theme.of(context).colorScheme.onSurface.withAlpha(25),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
                                   ],
                                 ),
-                                child: const Text(
+                                child: Text(
                                   'Tap to select location',
                                   style: TextStyle(
-                                    color: Colors.black87,
+                                    color: Theme.of(context).colorScheme.onSurface,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -573,11 +578,11 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                         // GPS Button
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onPrimary,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.3),
+                                color: Theme.of(context).colorScheme.onSurface.withAlpha(76),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -586,17 +591,17 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                           child: IconButton(
                             onPressed: _isGettingCurrentLocation ? null : _getCurrentLocation,
                             icon: _isGettingCurrentLocation
-                                ? const SizedBox(
+                                ? SizedBox(
                                     width: 20,
                                     height: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: Colors.blue,
+                                      color: Theme.of(context).colorScheme.primary,
                                     ),
                                   )
-                                : const Icon(
+                                : Icon(
                                     Icons.my_location,
-                                    color: Colors.blue,
+                                    color: Theme.of(context).colorScheme.primary,
                                     size: 24,
                                   ),
                             padding: const EdgeInsets.all(12),
@@ -606,11 +611,11 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                         // Manual Entry Button
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onPrimary,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.3),
+                                color: Theme.of(context).colorScheme.onSurface.withAlpha(76),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -618,9 +623,9 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                           ),
                           child: IconButton(
                             onPressed: _showManualLocationDialog,
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.edit_location_alt,
-                              color: Colors.green,
+                              color: Theme.of(context).colorScheme.secondary,
                               size: 24,
                             ),
                             padding: const EdgeInsets.all(12),
@@ -641,17 +646,17 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                 right: 16,
                 bottom: MediaQuery.of(context).padding.bottom + 16,
               ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.onPrimary,
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black12,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07),
                     blurRadius: 8,
-                    offset: Offset(0, -2),
+                    offset: const Offset(0, -2),
                   ),
                 ],
               ),
@@ -670,9 +675,9 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                     },
                     decoration: InputDecoration(
                       hintText: 'Search for a location...',
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.search,
-                        color: Colors.grey,
+                        color: onSurfaceVariantColor,
                         size: 20,
                       ),
                       suffixIcon: _searchController.text.isNotEmpty
@@ -685,23 +690,23 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                                   _searchSuggestions = [];
                                 });
                               },
-                              child: const Icon(
+                              child: Icon(
                                 Icons.clear,
-                                color: Colors.grey,
+                                color: onSurfaceVariantColor,
                                 size: 20,
                               ),
                             )
                           : null,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Colors.blue, width: 2),
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
                       ),
                       filled: true,
-                      fillColor: Colors.grey.shade50,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                   ),
@@ -712,13 +717,13 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                     Container(
                       constraints: const BoxConstraints(maxHeight: 120),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 4,
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                            blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
                         ],
@@ -730,7 +735,7 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                           final suggestion = _searchSuggestions[index];
                           return ListTile(
                             dense: true,
-                            leading: const Icon(Icons.location_on, color: Colors.blue, size: 20),
+                            leading: Icon(Icons.location_on, color: Theme.of(context).colorScheme.primary, size: 20),
                             title: Text(
                               suggestion,
                               style: const TextStyle(fontSize: 14),
@@ -746,12 +751,12 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                   
                   // Selected Location Display (shows address in text like reference)
                   if (_selectedAddress.isNotEmpty) ...[
-                    const Text(
+                    Text(
                       'Selected Location:',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey,
+                        color: onSurfaceVariantColor,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -759,20 +764,20 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
+                        color: Theme.of(context).colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.shade200),
+                        border: Border.all(color: Theme.of(context).colorScheme.primaryContainer),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.location_on, color: Colors.blue.shade600, size: 20),
+                          Icon(Icons.location_on, color: Theme.of(context).colorScheme.primary, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _selectedAddress,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.blue.shade800,
+                                color: Theme.of(context).colorScheme.primary,
                                 fontWeight: FontWeight.w500,
                               ),
                               maxLines: 2,
@@ -796,15 +801,15 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        disabledBackgroundColor: Colors.grey.shade300,
+                        disabledBackgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       ),
-                      child: const Text(
+                      child: Text(
                         'Confirm Location',
                         style: TextStyle(
                           fontSize: 16,
@@ -832,10 +837,14 @@ class _PerfectLocationPickerWidgetState extends State<PerfectLocationPickerWidge
 
 // Custom painter for map-like grid pattern
 class MapGridPainter extends CustomPainter {
+  final Color gridColor;
+
+  MapGridPainter({required this.gridColor});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.1)
+      ..color = gridColor
       ..strokeWidth = 0.5;
 
     // Draw grid lines

@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:roomie/data/models/notification_model.dart';
@@ -149,6 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNotificationIconShell({int unreadCount = 0}) {
+    final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
       width: 40,
       height: 40,
@@ -163,15 +165,15 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.redAccent,
+                  color: colorScheme.error,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 constraints: const BoxConstraints(minHeight: 18, minWidth: 18),
                 child: Center(
                   child: Text(
                     unreadCount > 99 ? '99+' : unreadCount.toString(),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: colorScheme.onError,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -185,9 +187,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNotificationIcon() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.transparent,
+  color: colorScheme.surface.withValues(alpha: 0),
         borderRadius: BorderRadius.circular(8),
       ),
       child: IconButton(
@@ -199,9 +202,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         },
-        icon: const Icon(
+        icon: Icon(
           Icons.notifications_none,
-          color: Color(0xFF121417),
+          color: colorScheme.onSurface,
           size: 24,
         ),
         padding: EdgeInsets.zero,
@@ -246,10 +249,14 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _isLoadingGroups = false;
         });
+        final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading group data: $e'),
-            backgroundColor: Colors.red,
+            content: Text(
+              'Error loading group data: $e',
+              style: TextStyle(color: colorScheme.onError),
+            ),
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -275,7 +282,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(true),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                  ),
                   child: const Text('Leave'),
                 ),
               ],
@@ -289,20 +298,28 @@ class _HomeScreenState extends State<HomeScreen> {
         await _loadUserGroupData(); // Refresh home screen data
 
         if (mounted) {
+          final colorScheme = Theme.of(context).colorScheme;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Successfully left the group'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: Text(
+                'Successfully left the group',
+                style: TextStyle(color: colorScheme.onPrimary),
+              ),
+              backgroundColor: colorScheme.primary,
             ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
+        final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error leaving group: $e'),
-            backgroundColor: Colors.red,
+            content: Text(
+              'Error leaving group: $e',
+              style: TextStyle(color: colorScheme.onError),
+            ),
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -340,8 +357,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       body: Stack(
         children: [
           PageView(
@@ -380,19 +398,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPageIndicator(int index, String label) {
     final isActive = _currentPageIndex == index;
+    final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => navigateToPage(index),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF121417) : Colors.transparent,
+          color: isActive ? colorScheme.primary : colorScheme.surface.withValues(alpha: 0),
           borderRadius: BorderRadius.circular(16),
-          border: isActive ? null : Border.all(color: Colors.grey[300]!),
+          border: isActive ? null : Border.all(color: colorScheme.outlineVariant),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isActive ? Colors.white : Colors.grey[600],
+            color: isActive ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
             fontSize: 10,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
           ),
@@ -402,13 +421,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeContent() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       body: Column(
         children: [
           // Custom App Bar
           Container(
-            color: Colors.white,
+            color: colorScheme.surface,
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -418,13 +440,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Home',
-                      style: TextStyle(
-                        color: Color(0xFF121417),
-                        fontSize: 24,
+                      style: textTheme.headlineSmall?.copyWith(
+                        color: colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
-                      ),
+                      ) ??
+                          TextStyle(
+                            color: colorScheme.onSurface,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     Row(
                       children: [
@@ -436,7 +462,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.transparent,
+                            color: colorScheme.surface.withValues(alpha: 0),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: IconButton(
@@ -449,9 +475,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               );
                             },
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.person_outline,
-                              color: Color(0xFF121417),
+                              color: colorScheme.onSurface,
                               size: 24,
                             ),
                             padding: EdgeInsets.zero,
@@ -464,7 +490,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: Colors.transparent,
+                              color: colorScheme.surface.withValues(alpha: 0),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: IconButton(
@@ -477,9 +503,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ).then((_) => _loadUserGroupData());
                               },
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.add,
-                                color: Color(0xFF121417),
+                                color: colorScheme.onSurface,
                                 size: 24,
                               ),
                               padding: EdgeInsets.zero,
@@ -515,43 +541,55 @@ class _HomeScreenState extends State<HomeScreen> {
                     else ...[
                       // Current Room Section (show if user is in a group)
                       if (_currentUserGroup != null) ...[
-                        const Padding(
-                          padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                           child: Text(
                             'Current Room',
-                            style: TextStyle(
-                              color: Color(0xFF121417),
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: textTheme.titleLarge?.copyWith(
+                                  color: colorScheme.onSurface,
+                                  fontWeight: FontWeight.bold,
+                                ) ??
+                                TextStyle(
+                                  color: colorScheme.onSurface,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                         ),
                         _buildCozyCornerCard(),
                         // Available Rooms section below current room
-                        const Padding(
-                          padding: EdgeInsets.fromLTRB(16, 24, 16, 16),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
                           child: Text(
                             'Available Rooms',
-                            style: TextStyle(
-                              color: Color(0xFF121417),
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: textTheme.titleLarge?.copyWith(
+                                  color: colorScheme.onSurface,
+                                  fontWeight: FontWeight.bold,
+                                ) ??
+                                TextStyle(
+                                  color: colorScheme.onSurface,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                         ),
                         _buildAvailableGroupsList(),
                       ],
                       // Available Groups Section (only show if user has no group)
                       if (_currentUserGroup == null) ...[
-                        const Padding(
-                          padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                           child: Text(
                             'Available Groups',
-                            style: TextStyle(
-                              color: Color(0xFF121417),
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: textTheme.titleLarge?.copyWith(
+                                  color: colorScheme.onSurface,
+                                  fontWeight: FontWeight.bold,
+                                ) ??
+                                TextStyle(
+                                  color: colorScheme.onSurface,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                         ),
                         _buildAvailableGroupsList(),
@@ -577,6 +615,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final double advanceAmount = pricing['advanceAmount'] as double;
     final String roomType =
         (_currentUserGroup!['roomType'] ?? 'Shared').toString();
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
@@ -584,36 +625,44 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: _navigateToGroupDetails,
         child: Container(
           decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(16.0),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8,
+                color: colorScheme.shadow.withValues(alpha: 0.15),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+              BoxShadow(
+                color: colorScheme.surface.withValues(alpha: 0.05),
+                blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
             ],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16.0),
-            child: Container(
-              color: Colors.white,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                   // Group Image
                   Container(
                     height: 200,
                     width: double.infinity,
-                    color: const Color(0xFFF5F5F5),
+                    color: colorScheme.surfaceContainerHighest,
                     child: Image.network(
                       _currentUserGroup!['imageUrl'] ??
                           'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800',
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        return const Center(
+                        return Center(
                           child: Icon(
                             Icons.image,
-                            color: Colors.grey,
+                            color: colorScheme.onSurfaceVariant,
                             size: 50,
                           ),
                         );
@@ -628,21 +677,29 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           _currentUserGroup!['name'] ?? 'My Group',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF121417),
-                          ),
+                          style: textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onSurface,
+                              ) ??
+                              TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onSurface,
+                              ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           _currentUserGroup!['description'] ??
                               'Your current group where you can connect with roommates.',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF677583),
-                            height: 1.4,
-                          ),
+                          style: textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                                height: 1.4,
+                              ) ??
+                              TextStyle(
+                                fontSize: 14,
+                                color: colorScheme.onSurfaceVariant,
+                                height: 1.4,
+                              ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -654,7 +711,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             if (rentAmount > 0)
                               _buildMetaChip(
                                 icon: Icons.attach_money,
-                                color: Colors.green,
+                                color: colorScheme.primary,
                                 label: _formatAmount(
                                   rentAmount,
                                   rentCurrency,
@@ -664,7 +721,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             if (advanceAmount > 0)
                               _buildMetaChip(
                                 icon: Icons.account_balance_wallet_outlined,
-                                color: Colors.deepPurple,
+                                color: colorScheme.secondary,
                                 label: _formatAmount(
                                   advanceAmount,
                                   rentCurrency,
@@ -673,7 +730,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             _buildMetaChip(
                               icon: Icons.home_outlined,
-                              color: Colors.teal,
+                              color: colorScheme.secondary,
                               label: roomType,
                             ),
                           ],
@@ -684,10 +741,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Text(
                               '${_currentUserGroup!['memberCount'] ?? 1} members',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF677583),
-                              ),
+                              style: textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ) ??
+                                  TextStyle(
+                                    fontSize: 14,
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
                             ),
                             // Chat Button
                             ElevatedButton(
@@ -704,8 +764,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 );
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF007AFF),
-                                foregroundColor: Colors.white,
+                                backgroundColor: colorScheme.primary,
+                                foregroundColor: colorScheme.onPrimary,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                   vertical: 8,
@@ -714,12 +774,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Chat',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: textTheme.labelLarge?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.onPrimary,
+                                    ) ??
+                                    TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.onPrimary,
+                                    ),
                               ),
                             ),
                           ],
@@ -732,11 +797,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildAvailableGroupsList() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     if (_availableGroups.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -744,32 +811,52 @@ class _HomeScreenState extends State<HomeScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[200]!),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.shadow.withValues(alpha: 0.08),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             children: [
-              const Icon(
+              Icon(
                 Icons.group_add_outlined,
-                color: Colors.grey,
+                color: colorScheme.onSurfaceVariant,
                 size: 48,
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'No groups available',
-                style: TextStyle(
-                  color: Color(0xFF121417),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: textTheme.titleMedium?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ) ??
+                    TextStyle(
+                      color: colorScheme.onSurface,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
               const SizedBox(height: 4),
               Text(
                 _canUserCreateGroup
                     ? 'Create your first group to get started'
                     : 'You are already in a group.',
-                style: const TextStyle(color: Color(0xFF677583), fontSize: 14),
+                style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ) ??
+                    TextStyle(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 14,
+                    ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -793,12 +880,21 @@ class _HomeScreenState extends State<HomeScreen> {
               return Container(
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16.0),
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
+                      color: colorScheme.shadow.withValues(alpha: 0.15),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                    BoxShadow(
+                      color: colorScheme.surface.withValues(alpha: 0.05),
+                      blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
                   ],
@@ -827,28 +923,38 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Text(
                                 group['name'] ?? 'Unknown Group',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF121417),
-                                ),
+                                style: textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.onSurface,
+                                    ) ??
+                                    TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.onSurface,
+                                    ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 '${group['location'] ?? 'Location'}, ${group['memberCount'] ?? 0} members',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF677583),
-                                ),
+                                style: textTheme.bodyMedium?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ) ??
+                                    TextStyle(
+                                      fontSize: 14,
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
                               ),
                               if (group['description'] != null) ...[
                                 const SizedBox(height: 8),
                                 Text(
                                   group['description'],
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF677583),
-                                  ),
+                                  style: textTheme.bodySmall?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ) ??
+                                      TextStyle(
+                                        fontSize: 12,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -861,7 +967,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   if (rentAmount > 0)
                                     _buildMetaChip(
                                       icon: Icons.attach_money,
-                                      color: Colors.green,
+                                      color: colorScheme.primary,
                                       label: _formatAmount(
                                         rentAmount,
                                         rentCurrency,
@@ -872,7 +978,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     _buildMetaChip(
                                       icon:
                                           Icons.account_balance_wallet_outlined,
-                                      color: Colors.deepPurple,
+                                      color: colorScheme.secondary,
                                       label: _formatAmount(
                                         advanceAmount,
                                         rentCurrency,
@@ -882,7 +988,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   if (roomType.isNotEmpty)
                                     _buildMetaChip(
                                       icon: Icons.home_outlined,
-                                      color: Colors.teal,
+                                      color: colorScheme.secondary,
                                       label: roomType,
                                     ),
                                 ],
@@ -895,7 +1001,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           height: 60,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
-                            color: const Color(0xFFF5F5F5),
+                            color: colorScheme.surfaceContainerHigh,
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
@@ -909,16 +1015,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                         error,
                                         stackTrace,
                                       ) {
-                                        return const Icon(
+                                        return Icon(
                                           Icons.group,
-                                          color: Colors.grey,
+                                          color: colorScheme.onSurfaceVariant,
                                           size: 30,
                                         );
                                       },
                                     )
-                                    : const Icon(
+                                    : Icon(
                                       Icons.group,
-                                      color: Colors.grey,
+                                      color: colorScheme.onSurfaceVariant,
                                       size: 30,
                                     ),
                           ),
@@ -934,26 +1040,36 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSearchPage() {
-    return const Scaffold(
-      backgroundColor: Colors.white,
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
+            Icon(Icons.search, size: 64, color: colorScheme.onSurfaceVariant),
+            const SizedBox(height: 16),
             Text(
               'Search',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF121417),
-              ),
+              style: textTheme.headlineSmall?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ) ??
+                  TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'Search functionality coming soon',
-              style: TextStyle(fontSize: 16, color: Color(0xFF677583)),
+              style: textTheme.bodyLarge?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ) ??
+                  TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -981,22 +1097,29 @@ class GroupDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF121417)),
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
         ),
         title: Text(
           group['name'] ?? 'Group Details',
-          style: const TextStyle(
-            color: Color(0xFF121417),
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: textTheme.titleMedium?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ) ??
+              TextStyle(
+                color: colorScheme.onSurface,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
         ),
       ),
       body: SingleChildScrollView(
@@ -1007,14 +1130,18 @@ class GroupDetailsScreen extends StatelessWidget {
             Container(
               height: 250,
               width: double.infinity,
-              color: const Color(0xFFF5F5F5),
+              color: colorScheme.surfaceContainerHighest,
               child: Image.network(
                 group['imageUrl'] ??
                     'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
-                  return const Center(
-                    child: Icon(Icons.image, color: Colors.grey, size: 50),
+                  return Center(
+                    child: Icon(
+                      Icons.image,
+                      color: colorScheme.onSurfaceVariant,
+                      size: 50,
+                    ),
                   );
                 },
               ),
@@ -1028,61 +1155,79 @@ class GroupDetailsScreen extends StatelessWidget {
                 children: [
                   Text(
                     group['name'] ?? 'Group Name',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF121417),
-                    ),
+                    style: textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ) ??
+                        TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ),
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.location_on_outlined,
-                        color: Color(0xFF677583),
+                        color: colorScheme.onSurfaceVariant,
                         size: 16,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         group['location'] ?? 'Location',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF677583),
-                        ),
+                        style: textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ) ??
+                            TextStyle(
+                              fontSize: 16,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
                       ),
                       const SizedBox(width: 16),
-                      const Icon(
+                      Icon(
                         Icons.people_outline,
-                        color: Color(0xFF677583),
+                        color: colorScheme.onSurfaceVariant,
                         size: 16,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         '${group['memberCount'] ?? 0} members',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF677583),
-                        ),
+                        style: textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ) ??
+                            TextStyle(
+                              fontSize: 16,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Description',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF121417),
-                    ),
+                    style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ) ??
+                        TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     group['description'] ?? 'No description available.',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF677583),
-                      height: 1.4,
-                    ),
+                    style: textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          height: 1.4,
+                        ) ??
+                        TextStyle(
+                          fontSize: 16,
+                          color: colorScheme.onSurfaceVariant,
+                          height: 1.4,
+                        ),
                   ),
                   const SizedBox(height: 24),
 
@@ -1102,16 +1247,21 @@ class GroupDetailsScreen extends StatelessWidget {
                           );
                         },
                         icon: const Icon(Icons.group_add, size: 18),
-                        label: const Text(
+                        label: Text(
                           'Manage Join Requests',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onPrimary,
+                              ) ??
+                              TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onPrimary,
+                              ),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF007AFF),
-                          foregroundColor: Colors.white,
+                          backgroundColor: colorScheme.primary,
+                          foregroundColor: colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -1127,19 +1277,24 @@ class GroupDetailsScreen extends StatelessWidget {
                       child: OutlinedButton(
                         onPressed: onLeaveGroup,
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          side: const BorderSide(color: Colors.red),
+                          foregroundColor: colorScheme.error,
+                          side: BorderSide(color: colorScheme.error),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Leave Group',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.error,
+                              ) ??
+                              TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.error,
+                              ),
                         ),
                       ),
                     ),

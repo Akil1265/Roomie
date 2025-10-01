@@ -56,7 +56,7 @@ class _ChatListWidgetState extends State<ChatListWidget> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to load chats: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -170,14 +170,14 @@ class _ChatListWidgetState extends State<ChatListWidget> {
           Icon(
             Icons.chat_bubble_outline,
             size: 64,
-            color: Colors.grey[400],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
           Text(
             _searchQuery.isEmpty ? 'No chats yet' : 'No chats found',
             style: TextStyle(
               fontSize: 18,
-              color: Colors.grey[600],
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -188,7 +188,7 @@ class _ChatListWidgetState extends State<ChatListWidget> {
                 : 'Try a different search term',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -232,7 +232,7 @@ class _ChatListItem extends StatelessWidget {
           currentUserId,
         ),
         style: TextStyle(
-          color: hasUnread ? Colors.black87 : Colors.grey[600],
+          color: hasUnread ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
           fontWeight: hasUnread ? FontWeight.w500 : FontWeight.normal,
         ),
         maxLines: 1,
@@ -246,7 +246,7 @@ class _ChatListItem extends StatelessWidget {
             chat.getTimeAgo(),
             style: TextStyle(
               fontSize: 12,
-              color: hasUnread ? Colors.black87 : Colors.grey[500],
+              color: hasUnread ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: hasUnread ? FontWeight.w500 : FontWeight.normal,
             ),
           ),
@@ -255,7 +255,7 @@ class _ChatListItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: Theme.of(context).colorScheme.primary,
                 borderRadius: BorderRadius.circular(10),
               ),
               constraints: const BoxConstraints(
@@ -264,8 +264,8 @@ class _ChatListItem extends StatelessWidget {
               ),
               child: Text(
                 unreadCount > 99 ? '99+' : unreadCount.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),

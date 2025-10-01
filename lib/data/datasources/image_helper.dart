@@ -12,11 +12,16 @@ class ImageHelper {
   }) {
     if (url == null || url.isEmpty) {
       return placeholder ??
-          Container(
-            width: width,
-            height: height,
-            color: Colors.grey[200],
-            child: Icon(Icons.image_outlined, color: Colors.grey[400]),
+          Builder(
+            builder: (context) {
+              final colorScheme = Theme.of(context).colorScheme;
+              return Container(
+                width: width,
+                height: height,
+                color: colorScheme.surfaceContainerHighest,
+                child: Icon(Icons.image_outlined, color: colorScheme.onSurfaceVariant),
+              );
+            },
           );
     }
     return Image.network(
@@ -27,11 +32,16 @@ class ImageHelper {
       errorBuilder: (context, error, stack) {
         print('Network image error: $error');
         return errorWidget ??
-            Container(
-              width: width,
-              height: height,
-              color: Colors.grey[200],
-              child: Icon(Icons.broken_image, color: Colors.grey[400]),
+            Builder(
+              builder: (context) {
+                final colorScheme = Theme.of(context).colorScheme;
+                return Container(
+                  width: width,
+                  height: height,
+                  color: colorScheme.surfaceContainerHighest,
+                  child: Icon(Icons.broken_image, color: colorScheme.onSurfaceVariant),
+                );
+              },
             );
       },
       // Optional: you could add frameBuilder for fade-in effect

@@ -182,6 +182,9 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     final List<String> images = List<String>.from(widget.group['images'] ?? []);
     final bool hasImages = images.isNotEmpty;
     final dynamic rentRaw = widget.group['rent'];
@@ -209,12 +212,12 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 280.0,
-            backgroundColor: Colors.white,
+            backgroundColor: colorScheme.surface,
             elevation: 0,
             pinned: true,
             stretch: true,
@@ -228,7 +231,7 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
               ),
             ),
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
               onPressed: () => Navigator.of(context).pop(),
             ),
           ),
@@ -244,11 +247,15 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                       Expanded(
                         child: Text(
                           widget.group['name'] ?? 'Unnamed Group',
-                          style: const TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF121417),
-                          ),
+                          style: textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onSurface,
+                              ) ??
+                              TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onSurface,
+                              ),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -258,16 +265,21 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE0F2F1),
+                          color: colorScheme.secondaryContainer,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Active',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.teal,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style:
+                              textTheme.labelSmall?.copyWith(
+                                color: colorScheme.onSecondaryContainer,
+                                fontWeight: FontWeight.w600,
+                              ) ??
+                              TextStyle(
+                                fontSize: 12,
+                                color: colorScheme.onSecondaryContainer,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ),
                     ],
@@ -275,20 +287,25 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                   const SizedBox(height: 16),
                   Text(
                     widget.group['description'] ?? 'No description available.',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF677583),
-                      height: 1.5,
-                    ),
+                    style:
+                        textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          height: 1.5,
+                        ) ??
+                        TextStyle(
+                          fontSize: 16,
+                          color: colorScheme.onSurfaceVariant,
+                          height: 1.5,
+                        ),
                   ),
                   const SizedBox(height: 24),
-                  const Divider(height: 1, color: Color(0xFFE8E8E8)),
+                  Divider(height: 1, color: colorScheme.outlineVariant),
                   const SizedBox(height: 24),
                   _buildFullWidthInfoCard(
                     icon: Icons.location_on_outlined,
                     title: 'Location',
                     value: widget.group['location'] ?? 'Not specified',
-                    color: Colors.blue,
+                    color: colorScheme.primary,
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -298,7 +315,7 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                           icon: Icons.attach_money,
                           title: 'Rent',
                           value: _formatRent(rentAmount, rentCurrency),
-                          color: Colors.green,
+                          color: colorScheme.primary,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -307,7 +324,7 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                           icon: Icons.account_balance_wallet_outlined,
                           title: 'Advance',
                           value: _formatAdvance(advanceAmount, rentCurrency),
-                          color: Colors.deepPurple,
+                          color: colorScheme.secondary,
                         ),
                       ),
                     ],
@@ -320,7 +337,7 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                           icon: Icons.group_outlined,
                           title: 'Roommates',
                           value: widget.group['capacity']?.toString() ?? 'N/A',
-                          color: Colors.blueGrey,
+                          color: colorScheme.tertiary,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -329,7 +346,7 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                           icon: Icons.home_outlined,
                           title: 'Room Type',
                           value: widget.group['roomType'] ?? 'N/A',
-                          color: Colors.teal,
+                          color: colorScheme.secondary,
                         ),
                       ),
                     ],
@@ -341,18 +358,23 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                     value: _formatTimestamp(
                       widget.group['createdAt'] as Timestamp?,
                     ),
-                    color: Colors.orange,
+                    color: colorScheme.tertiary,
                   ),
                   const SizedBox(height: 24),
                   if (widget.group['amenities'] != null &&
                       (widget.group['amenities'] as List).isNotEmpty) ...[
-                    const Text(
+                    Text(
                       'Facilities',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF121417),
-                      ),
+                      style:
+                          textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ) ??
+                          TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
                     ),
                     const SizedBox(height: 12),
                     _buildAmenitiesGrid(
@@ -364,13 +386,18 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         'Members',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF121417),
-                        ),
+                        style:
+                            textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                            ) ??
+                            TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                            ),
                       ),
                       Row(
                         mainAxisSize: MainAxisSize.min,
@@ -396,7 +423,7 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                                 child: Icon(
                                   Icons.image_not_supported,
                                   size: 18,
-                                  color: Colors.grey,
+                                  color: colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ),
@@ -414,7 +441,7 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                                 child: Icon(
                                   Icons.image_not_supported,
                                   size: 18,
-                                  color: Colors.grey,
+                                  color: colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ),
@@ -435,6 +462,7 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
   }
 
   Widget _buildImageSlider(List<String> images) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Stack(
       children: [
         PageView.builder(
@@ -471,8 +499,8 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                     shape: BoxShape.circle,
                     color:
                         _currentImageIndex == index
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.5),
+                            ? colorScheme.surface
+                            : colorScheme.surface.withValues(alpha: 0.5),
                   ),
                 );
               }),
@@ -483,15 +511,22 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
   }
 
   Widget _buildPlaceholderImage() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      color: const Color(0xFFF5F5F5),
-      child: const Center(
-        child: Icon(Icons.group, color: Colors.grey, size: 60),
+      color: colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: Icon(
+          Icons.group,
+          color: colorScheme.onSurfaceVariant,
+          size: 60,
+        ),
       ),
     );
   }
 
   Widget _buildAmenitiesGrid(List<String> amenities) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -500,17 +535,22 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: colorScheme.outlineVariant),
               ),
               child: Text(
                 amenity,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade800,
-                  fontWeight: FontWeight.w500,
-                ),
+                style:
+                    textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w500,
+                    ) ??
+                    TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w500,
+                    ),
               ),
             );
           }).toList(),
@@ -521,14 +561,33 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _membersFuture,
       builder: (context, snapshot) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+        final textTheme = theme.textTheme;
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: CircularProgressIndicator(color: colorScheme.primary),
+          );
         }
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          return Center(
+            child: Text(
+              'Error: ${snapshot.error}',
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.error,
+              ),
+            ),
+          );
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('No members found.'));
+          return Center(
+            child: Text(
+              'No members found.',
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          );
         }
 
         final members = snapshot.data!;
@@ -544,7 +603,7 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
             return Container(
               margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                color: Colors.transparent,
+                color: colorScheme.surface.withValues(alpha: 0),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: ListTile(
@@ -565,20 +624,33 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                 contentPadding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
                 leading: CircleAvatar(
                   radius: 20,
-                  backgroundColor: const Color(0xFFF0F0F0),
+                  backgroundColor: colorScheme.surfaceContainerHighest,
                   backgroundImage: member['profileImageUrl'] != null
                       ? NetworkImage(member['profileImageUrl'])
                       : null,
                   child: member['profileImageUrl'] == null
-                      ? const Icon(Icons.person, color: Colors.grey)
+                      ? Icon(
+                          Icons.person,
+                          color: colorScheme.onSurfaceVariant,
+                        )
                       : null,
                 ),
                 title: Text(
                   member['name'] ?? 'Unnamed Member',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ) ??
+                      const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 trailing: isCurrentUser
-                    ? const Text('You', style: TextStyle(color: Colors.grey))
+                    ? Text(
+                        'You',
+                        style: textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ) ??
+                            TextStyle(color: colorScheme.onSurfaceVariant),
+                      )
                     : isCreator
                         ? Container(
                             padding: const EdgeInsets.symmetric(
@@ -586,24 +658,28 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.indigo.withValues(alpha: 0.1),
+                              color: colorScheme.primary.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Admin',
-                              style: TextStyle(
-                                color: Colors.indigo,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: textTheme.labelSmall?.copyWith(
+                                    color: colorScheme.primary,
+                                    fontWeight: FontWeight.w500,
+                                  ) ??
+                                  TextStyle(
+                                    color: colorScheme.primary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                             ),
                           )
                         : (!isFollowing
                             ? ElevatedButton(
                                 onPressed: () => _toggleFollow(member['id']),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.black,
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: colorScheme.primary,
+                                  foregroundColor: colorScheme.onPrimary,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(20),
                                   ),
@@ -631,15 +707,17 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
     required String value,
     required Color color,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE8E8E8)),
+        border: Border.all(color: colorScheme.outlineVariant),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
@@ -656,20 +734,30 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF677583),
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style:
+                      textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ) ??
+                      TextStyle(
+                        fontSize: 14,
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF121417),
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style:
+                      textTheme.titleMedium?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ) ??
+                      TextStyle(
+                        fontSize: 16,
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
               ],
             ),
@@ -685,15 +773,17 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
     required String value,
     required Color color,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE8E8E8)),
+        border: Border.all(color: colorScheme.outlineVariant),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
@@ -709,22 +799,32 @@ class _CurrentGroupDetailScreenState extends State<CurrentGroupDetailScreen> {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF677583),
-                  fontWeight: FontWeight.w500,
-                ),
+                style:
+                    textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    ) ??
+                    TextStyle(
+                      fontSize: 14,
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Color(0xFF121417),
-              fontWeight: FontWeight.w600,
-            ),
+            style:
+                textTheme.titleMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ) ??
+                TextStyle(
+                  fontSize: 16,
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),

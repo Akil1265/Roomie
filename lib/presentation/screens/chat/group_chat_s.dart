@@ -83,7 +83,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to send message: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -104,16 +105,20 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 1,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back,
-            color: Color(0xFF121417),
+            color: colorScheme.onSurface,
           ),
         ),
         title: Column(
@@ -121,18 +126,15 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           children: [
             Text(
               widget.group['name'] ?? 'Group Chat',
-              style: const TextStyle(
-                color: Color(0xFF121417),
-                fontSize: 18,
+              style: textTheme.titleMedium?.copyWith(
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
             Text(
               '${widget.group['memberCount'] ?? 0} members',
-              style: const TextStyle(
-                color: Color(0xFF677583),
-                fontSize: 12,
-                fontWeight: FontWeight.normal,
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -141,15 +143,16 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           IconButton(
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Group info coming soon'),
-                  backgroundColor: Color(0xFF007AFF),
+                SnackBar(
+                  content: const Text('Group info coming soon'),
+                  backgroundColor: colorScheme.primary,
+                  behavior: SnackBarBehavior.floating,
                 ),
               );
             },
-            icon: const Icon(
+            icon: Icon(
               Icons.info_outline,
-              color: Color(0xFF121417),
+              color: colorScheme.onSurface,
             ),
           ),
         ],
@@ -164,8 +167,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   : Stream.value([]),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting || !_isInitialized) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
+                  return Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                    ),
                   );
                 }
 
@@ -174,25 +179,24 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.error_outline,
                           size: 48,
-                          color: Colors.red,
+                          color: colorScheme.error,
                         ),
                         const SizedBox(height: 16),
-                        const Text(
+                        Text(
                           'Error loading messages',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           snapshot.error.toString(),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF677583),
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -204,31 +208,33 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 final messages = snapshot.data ?? [];
 
                 if (messages.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.chat_bubble_outline,
                           size: 48,
-                          color: Color(0xFF677583),
+                          color: colorScheme.onSurfaceVariant,
                         ),
                         SizedBox(height: 16),
                         Text(
                           'No messages yet',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF121417),
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         SizedBox(height: 8),
                         Text(
                           'Start the conversation!',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF677583),
-                          ),
+                          style: textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ) ??
+                              TextStyle(
+                                fontSize: 14,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                         ),
                       ],
                     ),
@@ -259,11 +265,11 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           // Message Input
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Colors.white,
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
               border: Border(
                 top: BorderSide(
-                  color: Color(0xFFE5E5EA),
+                  color: colorScheme.outlineVariant,
                   width: 0.5,
                 ),
               ),
@@ -274,27 +280,34 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF2F2F7),
+                        color: colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: TextField(
                         controller: _messageController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Type a message...',
-                          hintStyle: TextStyle(
-                            color: Color(0xFF677583),
-                            fontSize: 16,
-                          ),
+                          hintStyle: textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ) ??
+                              TextStyle(
+                                color: colorScheme.onSurfaceVariant,
+                                fontSize: 16,
+                              ),
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 12,
                           ),
                         ),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF121417),
-                        ),
+                        style: textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurface,
+                              fontSize: 16,
+                            ) ??
+                            TextStyle(
+                              fontSize: 16,
+                              color: colorScheme.onSurface,
+                            ),
                         maxLines: 4,
                         minLines: 1,
                         onSubmitted: (_) => _sendMessage(),
@@ -307,13 +320,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     child: Container(
                       width: 40,
                       height: 40,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF007AFF),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.send,
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                         size: 20,
                       ),
                     ),
@@ -335,6 +348,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     final timeString = timestamp != null
         ? _formatTime(DateTime.fromMillisecondsSinceEpoch(timestamp))
         : '';
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     // System messages (like welcome messages)
     if (isSystemMessage) {
@@ -347,16 +363,20 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               vertical: 6,
             ),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               messageData['message'] ?? '',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFF677583),
-                fontStyle: FontStyle.italic,
-              ),
+              style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                  ) ??
+                  TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                  ),
               textAlign: TextAlign.center,
             ),
           ),
@@ -374,14 +394,18 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           if (!isMyMessage) ...[
             CircleAvatar(
               radius: 16,
-              backgroundColor: const Color(0xFF007AFF),
+              backgroundColor: colorScheme.secondaryContainer,
               child: Text(
                 (messageData['senderName'] as String?)?.substring(0, 1).toUpperCase() ?? 'U',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onSecondaryContainer,
+                      fontWeight: FontWeight.w600,
+                    ) ??
+                    TextStyle(
+                      color: colorScheme.onSecondaryContainer,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ),
             const SizedBox(width: 8),
@@ -397,8 +421,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               ),
               decoration: BoxDecoration(
                 color: isMyMessage
-                    ? const Color(0xFF007AFF)
-                    : Colors.white,
+                    ? colorScheme.primary
+                    : colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(18),
                   topRight: const Radius.circular(18),
@@ -407,7 +431,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: colorScheme.shadow.withValues(alpha: 0.08),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -419,32 +443,49 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   if (!isMyMessage) ...[
                     Text(
                       messageData['senderName'] ?? 'Unknown',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF007AFF),
-                      ),
+                      style: textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.primary,
+                          ) ??
+                          TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.primary,
+                          ),
                     ),
                     const SizedBox(height: 4),
                   ],
                   Text(
                     messageData['message'] ?? '',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isMyMessage ? Colors.white : const Color(0xFF121417),
-                      height: 1.3,
-                    ),
+                    style: textTheme.bodyLarge?.copyWith(
+                          color: isMyMessage
+                              ? colorScheme.onPrimary
+                              : colorScheme.onSurface,
+                          height: 1.3,
+                        ) ??
+                        TextStyle(
+                          fontSize: 16,
+                          color: isMyMessage
+                              ? colorScheme.onPrimary
+                              : colorScheme.onSurface,
+                          height: 1.3,
+                        ),
                   ),
                   if (timeString.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
                       timeString,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isMyMessage
-                            ? Colors.white.withValues(alpha: 0.7)
-                            : const Color(0xFF677583),
-                      ),
+                      style: textTheme.labelSmall?.copyWith(
+                            color: isMyMessage
+                                ? colorScheme.onPrimary.withValues(alpha: 0.7)
+                                : colorScheme.onSurfaceVariant,
+                          ) ??
+                          TextStyle(
+                            fontSize: 11,
+                            color: isMyMessage
+                                ? colorScheme.onPrimary.withValues(alpha: 0.7)
+                                : colorScheme.onSurfaceVariant,
+                          ),
                     ),
                   ],
                 ],
@@ -455,14 +496,18 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             const SizedBox(width: 8),
             CircleAvatar(
               radius: 16,
-              backgroundColor: const Color(0xFF34C759),
+              backgroundColor: colorScheme.primaryContainer,
               child: Text(
                 (messageData['senderName'] as String?)?.substring(0, 1).toUpperCase() ?? 'M',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.w600,
+                    ) ??
+                    TextStyle(
+                      color: colorScheme.onPrimaryContainer,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ),
           ],

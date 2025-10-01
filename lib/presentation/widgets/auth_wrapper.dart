@@ -16,15 +16,15 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, snapshot) {
         // Show a loading indicator while waiting for the auth state
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            backgroundColor: Colors.white,
+          return Scaffold(
+            backgroundColor: Theme.of(context).colorScheme.surface,
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      Color(0xFF121417),
+                      Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   SizedBox(height: 16),
@@ -33,7 +33,7 @@ class AuthWrapper extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF121417),
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 ],
@@ -53,15 +53,15 @@ class AuthWrapper extends StatelessWidget {
           builder: (context, userSnapshot) {
             // Show loading while checking user details
             if (userSnapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                backgroundColor: Colors.white,
+              return Scaffold(
+                backgroundColor: Theme.of(context).colorScheme.surface,
                 body: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFF121417),
+                          Theme.of(context).colorScheme.primary,
                         ),
                       ),
                       SizedBox(height: 16),
@@ -70,7 +70,7 @@ class AuthWrapper extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF121417),
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ],

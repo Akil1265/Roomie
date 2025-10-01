@@ -19,54 +19,54 @@ class NotificationsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notifications'),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 1,
       ),
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       body:
           userId == null
               ? const Center(child: Text('Please log in to see notifications.'))
               : StreamBuilder<List<NotificationModel>>(
-                stream: notificationService.getNotifications(userId),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  }
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.notifications_off_outlined,
-                            size: 80,
-                            color: Colors.grey,
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'No notifications yet.',
-                            style: TextStyle(fontSize: 18, color: Colors.grey),
-                          ),
-                        ],
-                      ),
+                  stream: notificationService.getNotifications(userId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    }
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.notifications_off_outlined,
+                              size: 80,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'No notifications yet.',
+                              style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    final notifications = snapshot.data!;
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      itemCount: notifications.length,
+                      itemBuilder: (context, index) {
+                        final notification = notifications[index];
+                        return NotificationCard(notification: notification);
+                      },
                     );
-                  }
-
-                  final notifications = snapshot.data!;
-
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    itemCount: notifications.length,
-                    itemBuilder: (context, index) {
-                      final notification = notifications[index];
-                      return NotificationCard(notification: notification);
-                    },
-                  );
-                },
-              ),
+                  },
+                ),
     );
   }
 }
@@ -81,6 +81,9 @@ class NotificationCard extends StatelessWidget {
     final notificationService = NotificationService();
     final bool isJoinRequestNotification =
         notification.type == 'join_request_received';
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
@@ -91,7 +94,7 @@ class NotificationCard extends StatelessWidget {
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         elevation: 2,
-        shadowColor: Colors.black.withValues(alpha: 0.1),
+        shadowColor: Theme.of(context).colorScheme.shadow,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -102,25 +105,31 @@ class NotificationCard extends StatelessWidget {
                 children: [
                   Icon(
                     _getIconForType(notification.type),
-                    color: Theme.of(context).primaryColor,
+                    color: colorScheme.primary,
                     size: 28,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       notification.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
-                      ),
+                      style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 17,
+                            color: colorScheme.onSurface,
+                          ) ??
+                          TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 17,
+                            color: colorScheme.onSurface,
+                          ),
                     ),
                   ),
                   if (!notification.isRead)
                     Container(
                       width: 8,
                       height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.blue,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -131,7 +140,14 @@ class NotificationCard extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 40.0),
                 child: Text(
                   notification.body,
-                  style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                  style: textTheme.bodyMedium?.copyWith(
+                        fontSize: 15,
+                        color: colorScheme.onSurfaceVariant,
+                      ) ??
+                      TextStyle(
+                        fontSize: 15,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -142,7 +158,14 @@ class NotificationCard extends StatelessWidget {
                   children: [
                     Text(
                       timeago.format(notification.createdAt.toDate()),
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      style: textTheme.bodySmall?.copyWith(
+                            fontSize: 12,
+                            color: colorScheme.onSurfaceVariant,
+                          ) ??
+                          TextStyle(
+                            fontSize: 12,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                     ),
                     if (notification.type == 'group_join_conflict')
                       Row(
@@ -190,6 +213,7 @@ class NotificationCard extends StatelessWidget {
     final groupsService = GroupsService();
     final notificationService = NotificationService();
     final messenger = ScaffoldMessenger.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -226,16 +250,22 @@ class NotificationCard extends StatelessWidget {
         await notificationService.deleteNotification(notification.id);
 
         messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Successfully switched groups!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text(
+              'Successfully switched groups!',
+              style: TextStyle(color: colorScheme.onPrimary),
+            ),
+            backgroundColor: colorScheme.primary,
           ),
         );
       } catch (e) {
         messenger.showSnackBar(
           SnackBar(
-            content: Text('Failed to switch groups: $e'),
-            backgroundColor: Colors.red,
+            content: Text(
+              'Failed to switch groups: $e',
+              style: TextStyle(color: colorScheme.onError),
+            ),
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -261,6 +291,7 @@ class NotificationCard extends StatelessWidget {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     final rootNavigator = Navigator.of(context, rootNavigator: true);
+    final colorScheme = Theme.of(context).colorScheme;
 
     final groupId = notification.data['groupId'] as String?;
     if (groupId == null || groupId.isEmpty) {
@@ -307,8 +338,11 @@ class NotificationCard extends StatelessWidget {
       }
       messenger.showSnackBar(
         SnackBar(
-          content: Text('Failed to open join requests: $e'),
-          backgroundColor: Colors.red,
+          content: Text(
+            'Failed to open join requests: $e',
+            style: TextStyle(color: colorScheme.onError),
+          ),
+          backgroundColor: colorScheme.error,
         ),
       );
     }

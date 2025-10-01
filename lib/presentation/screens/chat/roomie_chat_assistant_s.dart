@@ -118,6 +118,9 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     if (widget.isModal) {
       // Modal version without Scaffold
       return Column(
@@ -125,9 +128,9 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
           // Modal header with drag handle
           Container(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(24),
                 topRight: Radius.circular(24),
               ),
@@ -138,7 +141,7 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: colorScheme.outlineVariant,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -147,8 +150,8 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
                   children: [
                     CircleAvatar(
                       radius: 20,
-                      backgroundColor: const Color(0xFF4285F4),
-                      child: Icon(Icons.support_agent, color: Colors.white, size: 20),
+                      backgroundColor: colorScheme.primary,
+                      child: Icon(Icons.support_agent, color: colorScheme.onPrimary, size: 20),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -157,16 +160,16 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
                         children: [
                           Text(
                             'Roomie Assistant',
-                            style: TextStyle(
-                              color: Color(0xFF121417),
+                            style: textTheme.titleMedium?.copyWith(
+                              color: colorScheme.onSurface,
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           Text(
                             'Powered by Gemini AI',
-                            style: TextStyle(
-                              color: Color(0xFF677583),
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
                               fontSize: 12,
                               fontWeight: FontWeight.normal,
                             ),
@@ -238,7 +241,7 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
           // Messages List
           Expanded(
             child: Container(
-              color: const Color(0xFFF8F9FA),
+              color: colorScheme.surface,
               child: ListView.builder(
                 controller: _scrollController,
                 padding: const EdgeInsets.all(16),
@@ -262,23 +265,23 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
 
     // Full screen version with Scaffold
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 1,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back,
-            color: Color(0xFF121417),
+            color: colorScheme.onSurface,
           ),
         ),
         title: Row(
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundColor: const Color(0xFF4285F4),
-              child: Icon(Icons.support_agent, color: Colors.white, size: 20),
+              backgroundColor: colorScheme.primary,
+              child: Icon(Icons.support_agent, color: colorScheme.onPrimary, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -287,16 +290,16 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
                 children: [
                   Text(
                     'Roomie Assistant',
-                    style: TextStyle(
-                      color: Color(0xFF121417),
+                    style: textTheme.titleMedium?.copyWith(
+                      color: colorScheme.onSurface,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
                     'Powered by Gemini AI',
-                    style: TextStyle(
-                      color: Color(0xFF677583),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
                       fontSize: 12,
                       fontWeight: FontWeight.normal,
                     ),
@@ -391,6 +394,9 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
   }
 
   Widget _buildMessageBubble(Map<String, dynamic> messageData) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     final currentUser = _authService.currentUser;
     final isUser = messageData['senderId'] != 'assistant' &&
         (messageData['senderId'] == (currentUser?.uid ?? 'user'));
@@ -406,10 +412,10 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
             isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           if (!isUser) ...[
-            const CircleAvatar(
+            CircleAvatar(
               radius: 16,
-              backgroundColor: Color(0xFF4285F4),
-              child: Icon(Icons.support_agent, color: Colors.white, size: 16),
+              backgroundColor: colorScheme.primary,
+              child: Icon(Icons.support_agent, color: colorScheme.onPrimary, size: 16),
             ),
             const SizedBox(width: 8),
           ],
@@ -420,7 +426,7 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isUser ? const Color(0xFF4285F4) : Colors.white,
+                color: isUser ? colorScheme.primary : colorScheme.surface,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(18),
                   topRight: const Radius.circular(18),
@@ -429,7 +435,7 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: colorScheme.shadow.withValues(alpha: 0.05),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -440,21 +446,21 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
                 children: [
                   Text(
                     message,
-                    style: TextStyle(
+                    style: textTheme.bodyMedium?.copyWith(
                       fontSize: 16,
                       height: 1.3,
-                      color: isUser ? Colors.white : const Color(0xFF121417),
+                      color: isUser ? colorScheme.onPrimary : colorScheme.onSurface,
                     ),
                   ),
                   if (timeString.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
                       timeString,
-                      style: TextStyle(
+                      style: textTheme.bodySmall?.copyWith(
                         fontSize: 11,
                         color: isUser
-                            ? Colors.white.withValues(alpha: 0.7)
-                            : const Color(0xFF677583),
+                            ? colorScheme.onPrimary.withValues(alpha: 0.7)
+                            : colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -466,11 +472,11 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
             const SizedBox(width: 8),
             CircleAvatar(
               radius: 16,
-              backgroundColor: const Color(0xFF34C759),
+              backgroundColor: colorScheme.secondary,
               child: Text(
                 (messageData['senderName'] as String?)?.substring(0, 1).toUpperCase() ?? 'Y',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: colorScheme.onSecondary,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -483,24 +489,27 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
   }
 
   Widget _buildTypingIndicator() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 16,
-            backgroundColor: Color(0xFF4285F4),
-            child: Icon(Icons.support_agent, color: Colors.white, size: 16),
+            backgroundColor: colorScheme.primary,
+            child: Icon(Icons.support_agent, color: colorScheme.onPrimary, size: 16),
           ),
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: colorScheme.shadow.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -511,8 +520,8 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
               children: [
                 Text(
                   'Assistant is typing',
-                  style: TextStyle(
-                    color: Colors.grey[600],
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                     fontSize: 14,
                   ),
                 ),
@@ -522,7 +531,9 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.grey[400]!),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
@@ -534,11 +545,14 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
   }
 
   Widget _buildMessageInput() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey, width: 0.5)),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border(top: BorderSide(color: colorScheme.outlineVariant, width: 0.5)),
       ),
       child: Column(
         children: [
@@ -551,15 +565,15 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
                     hintText: 'Ask me anything about roommate life...',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
+                      borderSide: BorderSide(color: colorScheme.outlineVariant),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
+                      borderSide: BorderSide(color: colorScheme.outlineVariant),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24),
-                      borderSide: const BorderSide(color: Color(0xFF4285F4)),
+                      borderSide: BorderSide(color: colorScheme.primary),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 20,
@@ -575,8 +589,8 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
               FloatingActionButton(
                 mini: true,
                 onPressed: _sendMessage,
-                backgroundColor: const Color(0xFF4285F4),
-                child: const Icon(Icons.send, color: Colors.white),
+                backgroundColor: colorScheme.primary,
+                child: Icon(Icons.send, color: colorScheme.onPrimary),
               ),
             ],
           ),
@@ -587,13 +601,13 @@ class _RoomieChatAssistantScreenState extends State<RoomieChatAssistantScreen> {
               Icon(
                 Icons.auto_awesome,
                 size: 14,
-                color: Colors.grey[600],
+                color: colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 4),
               Text(
                 'Powered by Google Gemini AI',
-                style: TextStyle(
-                  color: Colors.grey[600],
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
