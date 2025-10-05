@@ -77,7 +77,7 @@ class RoomieLoadingSmall extends StatelessWidget {
       height: size,
       child: Lottie.asset(
         Theme.of(context).brightness == Brightness.dark
-            ? 'assets/Roomie loading-dark.json'
+            ? 'assets/Roomie-loading-dark.json'
             : 'assets/Roomie-loading-light.json',
         width: size,
         height: size,

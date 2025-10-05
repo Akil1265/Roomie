@@ -87,15 +87,19 @@ class _MessagesPageState extends State<MessagesPage> {
                   top: 20.0,
                   bottom: 16.0,
                 ),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Messages',
-                    style: textTheme.headlineSmall?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.bold,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Messages',
+                        style: textTheme.headlineSmall?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  ),
+
+                  ],
                 ),
               ),
             ),
@@ -179,6 +183,7 @@ class _MessagesPageState extends State<MessagesPage> {
                 }
 
                 if (snapshot.hasError) {
+                  print('❌ Snapshot error: ${snapshot.error}');
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -196,13 +201,25 @@ class _MessagesPageState extends State<MessagesPage> {
                             color: colorScheme.onSurfaceVariant,
                           ),
                         ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${snapshot.error}',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.error,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ],
                     ),
                   );
                 }
 
                 final conversations = snapshot.data ?? [];
+                print('📱 Messages page received ${conversations.length} conversations');
+                print('📊 Conversation types: ${conversations.map((c) => c['type']).toList()}');
+                
                 final filteredConversations = _applyFilters(conversations);
+                print('🔍 Filtered to ${filteredConversations.length} conversations (filter: $_selectedFilter)');
 
                 if (filteredConversations.isEmpty) {
                   return Center(

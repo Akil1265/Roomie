@@ -180,15 +180,17 @@ class MessagesService {
         final groupChatData = Map<String, dynamic>.from(entry.value);
 
         // Check if user has sent messages in this group
-        final messages = groupChatData['messages'] as Map<String, dynamic>?;
+        final messages = groupChatData['messages'];
         bool hasParticipated = false;
         Map<String, dynamic>? lastMessage;
         DateTime? lastMessageTime;
 
-        if (messages != null && messages.isNotEmpty) {
+        if (messages != null && messages is Map) {
+          final messageMap = Map<String, dynamic>.from(messages);
+          
           // Check if user has sent any messages
-          for (final msgEntry in messages.entries) {
-            final message = Map<String, dynamic>.from(msgEntry.value);
+          for (final msgEntry in messageMap.entries) {
+            final message = Map<String, dynamic>.from(msgEntry.value as Map);
             if (message['senderId'] == userId) {
               hasParticipated = true;
               break;
@@ -196,18 +198,23 @@ class MessagesService {
           }
 
           // Get the most recent message
-          final sortedMessages = messages.entries.toList()
-            ..sort((a, b) {
-              final aTime = (a.value as Map)['timestamp'] as int? ?? 0;
-              final bTime = (b.value as Map)['timestamp'] as int? ?? 0;
-              return bTime.compareTo(aTime);
-            });
+          if (messageMap.isNotEmpty) {
+            final sortedMessages = messageMap.entries.toList()
+              ..sort((a, b) {
+                final aMap = Map<String, dynamic>.from(a.value as Map);
+                final bMap = Map<String, dynamic>.from(b.value as Map);
+                final aTime = aMap['timestamp'] as int? ?? 0;
+                final bTime = bMap['timestamp'] as int? ?? 0;
+                return bTime.compareTo(aTime);
+              });
 
-          if (sortedMessages.isNotEmpty) {
-            lastMessage = Map<String, dynamic>.from(sortedMessages.first.value);
-            lastMessageTime = DateTime.fromMillisecondsSinceEpoch(
-              lastMessage['timestamp'] as int
-            );
+            if (sortedMessages.isNotEmpty) {
+              lastMessage = Map<String, dynamic>.from(sortedMessages.first.value as Map);
+              final timestamp = lastMessage['timestamp'] as int?;
+              if (timestamp != null) {
+                lastMessageTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+              }
+            }
           }
         }
 
@@ -292,28 +299,52 @@ class MessagesService {
 
         // Get other participant's details from Firestore
         final userDoc = await _firestore.collection('users').doc(otherParticipantId).get();
-        final userData = userDoc.data() ?? {};
+        
+        // Skip if user doesn't exist or has no data
+        if (!userDoc.exists || userDoc.data() == null) {
+          print('⏭️ Skipping chat $chatId - user $otherParticipantId not found');
+          continue;
+        }
+        
+        final userData = userDoc.data()!;
+        
+        // Skip if user has no name AND no email (invalid/test user)
+        if ((userData['name'] == null || userData['name'].toString().trim().isEmpty) && 
+            (userData['email'] == null || userData['email'].toString().trim().isEmpty)) {
+          print('⏭️ Skipping chat $chatId - invalid user data (no name/email)');
+          continue;
+        }
 
         // Get latest message
-        final messages = chatData['messages'] as Map<String, dynamic>?;
         Map<String, dynamic>? lastMessage;
         DateTime? lastMessageTime;
 
-        if (messages != null && messages.isNotEmpty) {
-          // Get the most recent message
-          final sortedMessages = messages.entries.toList()
-            ..sort((a, b) {
-              final aTime = (a.value as Map)['timestamp'] as int? ?? 0;
-              final bTime = (b.value as Map)['timestamp'] as int? ?? 0;
-              return bTime.compareTo(aTime);
-            });
+        try {
+          final messages = chatData['messages'];
+          if (messages != null && messages is Map) {
+            final messageMap = Map<String, dynamic>.from(messages);
+            if (messageMap.isNotEmpty) {
+              // Get the most recent message by sorting
+              final sortedMessages = messageMap.entries.toList()
+                ..sort((a, b) {
+                  final aMap = Map<String, dynamic>.from(a.value as Map);
+                  final bMap = Map<String, dynamic>.from(b.value as Map);
+                  final aTime = aMap['timestamp'] as int? ?? 0;
+                  final bTime = bMap['timestamp'] as int? ?? 0;
+                  return bTime.compareTo(aTime);
+                });
 
-          if (sortedMessages.isNotEmpty) {
-            lastMessage = Map<String, dynamic>.from(sortedMessages.first.value);
-            lastMessageTime = DateTime.fromMillisecondsSinceEpoch(
-              lastMessage['timestamp'] as int
-            );
+              if (sortedMessages.isNotEmpty) {
+                lastMessage = Map<String, dynamic>.from(sortedMessages.first.value as Map);
+                final timestamp = lastMessage['timestamp'] as int?;
+                if (timestamp != null) {
+                  lastMessageTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+                }
+              }
+            }
           }
+        } catch (e) {
+          print('⚠️ Error parsing messages for chat $chatId: $e');
         }
 
         conversations.add({

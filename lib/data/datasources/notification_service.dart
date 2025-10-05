@@ -110,11 +110,14 @@ class NotificationService {
 
   // Get notifications for a user
   Stream<List<NotificationModel>> getNotifications(String userId) {
-    return _userNotificationsRef(
-      userId,
-    ).orderBy('createdAt', descending: true).snapshots().map((snapshot) {
+    // Query all and filter unread in memory to avoid composite index requirements
+    return _userNotificationsRef(userId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
       return snapshot.docs
           .map((doc) => NotificationModel.fromFirestore(doc))
+          .where((n) => n.isRead == false)
           .toList();
     });
   }
