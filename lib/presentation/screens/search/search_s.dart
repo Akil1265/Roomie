@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:roomie/data/models/search_filters.dart';
 import 'package:roomie/presentation/controllers/search_controller.dart' as sc;
 import 'package:roomie/presentation/screens/groups/available_group_detail_s.dart';
+import 'package:roomie/presentation/screens/search/search_map_picker_s.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -64,32 +65,54 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+          // Top Row: Messages-style search bar + one Filter button
+          Container(
+            color: Colors.transparent,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
             child: Row(
               children: [
+                // Messages-like search bar
                 Expanded(
-                  child: TextField(
-                    controller: _searchCtrl,
-                    onChanged: (v) => _controller.setQuery(v),
-                    onSubmitted: (_) async {
-                      await _controller.commitQueryToHistory();
-                      await _loadHistory();
-                    },
-                    decoration: InputDecoration(
-                      hintText: 'Search groups by name or location...',
-                      prefixIcon: const Icon(Icons.search),
-                      filled: true,
-                      fillColor: cs.surfaceContainerHighest,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: cs.outlineVariant),
+                  flex: 1,
+                  child: Container(
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: cs.outlineVariant,
+                        width: 1,
+                      ),
+                    ),
+                    child: TextField(
+                      controller: _searchCtrl,
+                      onChanged: (v) => _controller.setQuery(v),
+                      onSubmitted: (_) async {
+                        await _controller.commitQueryToHistory();
+                        await _loadHistory();
+                      },
+                      decoration: InputDecoration(
+                        hintText: '',
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: cs.onSurfaceVariant,
+                          size: 20,
+                        ),
+                        filled: true,
+                        fillColor: Colors.transparent,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 16),
+                // Only one filter button on the right
                 InkWell(
                   borderRadius: BorderRadius.circular(12),
                   onTap: _openFilters,
@@ -153,21 +176,29 @@ class _SearchScreenState extends State<SearchScreen> {
 
           // Results
           Expanded(
-            child: _controller.loading
-                ? const Center(child: CircularProgressIndicator())
-                : _controller.results.isEmpty
-                    ? Center(
-                        child: Text('No results', style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                        itemBuilder: (_, i) {
-                          final g = _controller.results[i];
-                          return _GroupTile(group: g);
-                        },
-                        separatorBuilder: (context, index) => const SizedBox(height: 8),
-                        itemCount: _controller.results.length,
-                      ),
+            child: Builder(
+              builder: (_) {
+                if (_controller.loading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (_controller.results.isEmpty) {
+                  return Center(
+                    child: Text('No results', style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                  );
+                }
+
+                return ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                  itemBuilder: (_, i) {
+                    final g = _controller.results[i];
+                    return _GroupTile(group: g);
+                  },
+                  separatorBuilder: (context, index) => const SizedBox(height: 8),
+                  itemCount: _controller.results.length,
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -180,10 +211,17 @@ class _SearchScreenState extends State<SearchScreen> {
 
     double? minRent = _controller.filters.minRent;
     double? maxRent = _controller.filters.maxRent;
-    final roomTypeCtrl = TextEditingController(text: _controller.filters.roomType ?? '');
-    final locationCtrl = TextEditingController(text: _controller.filters.location ?? '');
-    final minRentCtrl = TextEditingController(text: minRent?.toStringAsFixed(0) ?? '');
-    final maxRentCtrl = TextEditingController(text: maxRent?.toStringAsFixed(0) ?? '');
+    double radiusKm = _controller.filters.radiusKm ?? 5.0;
+    String? selectedRoomType = _controller.filters.roomType?.isNotEmpty == true
+        ? _controller.filters.roomType
+        : null; // null means "None"
+    double sliderMin = 0;
+    double sliderMax = 100000; // adjust as needed or derive from data
+    RangeValues currentRange = RangeValues(
+      (minRent ?? sliderMin).clamp(sliderMin, sliderMax),
+      (maxRent ?? sliderMax).clamp(sliderMin, sliderMax),
+    );
+    final roomTypes = <String>['1BHK', '2BHK', '3BHK', 'PG', 'Studio'];
 
     await showModalBottomSheet(
       context: context,
@@ -209,11 +247,11 @@ class _SearchScreenState extends State<SearchScreen> {
                           setModalState(() {
                             minRent = null;
                             maxRent = null;
-                            roomTypeCtrl.text = '';
-                            locationCtrl.text = '';
-                            minRentCtrl.text = '';
-                            maxRentCtrl.text = '';
+                            selectedRoomType = null;
+                            radiusKm = 5.0;
+                            currentRange = const RangeValues(0, 100000);
                           });
+                          _controller.setFilters(const SearchFilters());
                         },
                         child: const Text('Reset'),
                       ),
@@ -221,57 +259,151 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Rent range
-                  Row(
+                  // Rent range (RangeSlider)
+                  Text('Rent range', style: theme.textTheme.labelLarge?.copyWith(color: cs.onSurface)),
+                  RangeSlider(
+                    min: sliderMin,
+                    max: sliderMax,
+                    divisions: 100,
+                    labels: RangeLabels(
+                      currentRange.start.toStringAsFixed(0),
+                      currentRange.end.toStringAsFixed(0),
+                    ),
+                    values: currentRange,
+                    onChanged: (values) {
+                      setModalState(() {
+                        currentRange = values;
+                        minRent = values.start == sliderMin ? null : values.start;
+                        maxRent = values.end == sliderMax ? null : values.end;
+                      });
+                      _controller.setFilters(_controller.filters.copyWith(
+                        minRent: minRent,
+                        maxRent: maxRent,
+                      ));
+                    },
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Room types chips
+                  Text('Room type', style: theme.textTheme.labelLarge?.copyWith(color: cs.onSurface)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
                     children: [
-                      Expanded(
-                        child: TextField(
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'Min rent'),
-                          controller: minRentCtrl,
-                          onChanged: (v) => setModalState(() => minRent = double.tryParse(v)),
-                        ),
+                      ChoiceChip(
+                        label: const Text('None'),
+                        selected: selectedRoomType == null || selectedRoomType!.isEmpty,
+                        onSelected: (sel) {
+                          setModalState(() => selectedRoomType = null);
+                          _controller.setFilters(_controller.filters.copyWith(roomType: ''));
+                        },
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'Max rent'),
-                          controller: maxRentCtrl,
-                          onChanged: (v) => setModalState(() => maxRent = double.tryParse(v)),
+                      for (final rt in roomTypes)
+                        ChoiceChip(
+                          label: Text(rt),
+                          selected: selectedRoomType == rt,
+                          onSelected: (sel) {
+                            setModalState(() => selectedRoomType = sel ? rt : null);
+                            _controller.setFilters(_controller.filters.copyWith(roomType: sel ? rt : ''));
+                          },
                         ),
-                      ),
                     ],
                   ),
 
-                  const SizedBox(height: 8),
-                  TextField(
-                    decoration: const InputDecoration(labelText: 'Location'),
-                    controller: locationCtrl,
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    decoration: const InputDecoration(labelText: 'Room type (e.g., 1BHK, 2BHK, PG)'),
-                    controller: roomTypeCtrl,
-                  ),
+                  const SizedBox(height: 12),
 
-                  const SizedBox(height: 16),
+                  // Location & Radius - Single button to open map
+                  Text('Location & Radius', style: theme.textTheme.labelLarge?.copyWith(color: cs.onSurface)),
+                  const SizedBox(height: 8),
+                  
+                  // Selected location display
+                  if (_controller.filters.hasGeo)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: cs.primary.withValues(alpha: 0.5)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.location_on, color: cs.primary, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Location set',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: cs.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  'Radius: ${_controller.filters.radiusKm?.toStringAsFixed(1)} km',
+                                  style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.clear),
+                            color: cs.error,
+                            iconSize: 20,
+                            onPressed: () {
+                              _controller.setFilters(_controller.filters.copyWith(
+                                lat: null,
+                                lng: null,
+                                radiusKm: null,
+                              ));
+                              setModalState(() {});
+                            },
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: cs.outlineVariant),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.location_off, color: cs.onSurfaceVariant, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'No location filter set',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  
+                  const SizedBox(height: 12),
+                  
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      icon: const Icon(Icons.check),
-                      onPressed: () {
-                        _controller.setFilters(SearchFilters(
-                          minRent: minRent,
-                          maxRent: maxRent,
-                          location: locationCtrl.text.trim(),
-                          roomType: roomTypeCtrl.text.trim(),
-                        ));
-                        Navigator.pop(context);
+                      icon: const Icon(Icons.map),
+                      label: const Text('Select Location on Map'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: () async {
+                        await _pickLocationOnMap(setModalState, radiusKm);
                       },
-                      label: const Text('Apply filters'),
                     ),
                   ),
+
                   const SizedBox(height: 8),
                 ],
               ),
@@ -280,6 +412,30 @@ class _SearchScreenState extends State<SearchScreen> {
         );
       },
     );
+  }
+
+  Future<void> _pickLocationOnMap(StateSetter setModalState, double radiusKm) async {
+    final result = await Navigator.push<Map<String, double>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SearchMapPickerScreen(
+          initialLat: _controller.filters.lat,
+          initialLng: _controller.filters.lng,
+          radiusKm: radiusKm,
+        ),
+      ),
+    );
+    
+    if (result != null && result['lat'] != null && result['lng'] != null) {
+      final selectedRadius = result['radius'] ?? radiusKm;
+      _controller.setGeo(result['lat']!, result['lng']!, selectedRadius);
+      setModalState(() {}); // Update modal state
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location selected on map!')),
+        );
+      }
+    }
   }
 }
 
