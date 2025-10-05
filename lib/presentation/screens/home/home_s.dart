@@ -14,6 +14,7 @@ import 'package:roomie/data/datasources/auth_service.dart';
 import 'package:roomie/data/datasources/groups_service.dart';
 import 'package:roomie/data/datasources/notification_service.dart';
 import 'package:roomie/presentation/widgets/roomie_loading_widget.dart';
+import 'package:roomie/presentation/screens/search/search_s.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -1040,41 +1041,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSearchPage() {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search, size: 64, color: colorScheme.onSurfaceVariant),
-            const SizedBox(height: 16),
-            Text(
-              'Search',
-              style: textTheme.headlineSmall?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.bold,
-                  ) ??
-                  TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Search functionality coming soon',
-              style: textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ) ??
-                  TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const SearchScreen();
   }
 
   Widget _buildMessagesPage() {
