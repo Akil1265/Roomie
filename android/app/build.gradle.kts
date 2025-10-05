@@ -62,6 +62,12 @@ android {
         release {
             // signingConfig = signingConfigs.getByName("release")
             // Using default keystore for now
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }

@@ -29,6 +29,8 @@ class _SearchMapPickerScreenState extends State<SearchMapPickerScreen> {
   bool _isLoadingLocation = false;
   String _locationName = '';
   bool _isLoadingAddress = false;
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearching = false;
 
   @override
   void initState() {
@@ -69,11 +71,42 @@ class _SearchMapPickerScreenState extends State<SearchMapPickerScreen> {
         circleId: const CircleId('searchRadius'),
         center: _selectedLocation,
         radius: _radiusKm * 1000, // Convert km to meters
-        fillColor: Colors.blue.withValues(alpha: 0.2),
+  fillColor: Colors.blue.withValues(alpha: 0.2),
         strokeColor: Colors.blue,
         strokeWidth: 2,
       );
     });
+  }
+
+  Future<void> _searchPlace() async {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) return;
+    setState(() => _isSearching = true);
+    try {
+      final results = await locationFromAddress(query);
+      if (results.isNotEmpty) {
+        final loc = results.first;
+        final target = LatLng(loc.latitude, loc.longitude);
+        _onTap(target);
+        await _mapController?.animateCamera(
+          CameraUpdate.newLatLngZoom(target, 14),
+        );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No results for that place')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Search failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSearching = false);
+    }
   }
 
   Future<void> _getAddressFromLatLng(LatLng location) async {
@@ -89,7 +122,7 @@ class _SearchMapPickerScreenState extends State<SearchMapPickerScreen> {
         final name = placemark.name ?? '';
         final locality = placemark.locality ?? '';
         final area = placemark.subLocality ?? '';
-        
+
         setState(() {
           _locationName = [name, area, locality]
               .where((s) => s.isNotEmpty)
@@ -103,14 +136,6 @@ class _SearchMapPickerScreenState extends State<SearchMapPickerScreen> {
     } finally {
       setState(() => _isLoadingAddress = false);
     }
-  }
-
-  void _confirmSelection() {
-    Navigator.pop(context, {
-      'lat': _selectedLocation.latitude,
-      'lng': _selectedLocation.longitude,
-      'radius': _radiusKm,
-    });
   }
 
   Future<void> _getCurrentLocation() async {
@@ -164,6 +189,11 @@ class _SearchMapPickerScreenState extends State<SearchMapPickerScreen> {
         title: const Text('Select Location & Radius'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: 'Cancel',
+            onPressed: () => Navigator.pop(context, null),
+          ),
+          IconButton(
             icon: const Icon(Icons.check),
             onPressed: _confirmSelection,
             tooltip: 'Confirm',
@@ -184,137 +214,183 @@ class _SearchMapPickerScreenState extends State<SearchMapPickerScreen> {
             circles: _radiusCircle != null ? {_radiusCircle!} : {},
             myLocationEnabled: true,
             myLocationButtonEnabled: false,
+            zoomControlsEnabled: true,
           ),
 
-          // Top info card
+          // Top-center search bar and place name
           Positioned(
-            top: 16,
+            top: 12,
             left: 16,
             right: 16,
-            child: Card(
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.location_on, color: cs.primary, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _isLoadingAddress
-                              ? const Text('Loading...')
-                              : Text(
-                                  _locationName.isEmpty
-                                      ? 'Tap on map to select'
-                                      : _locationName,
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Search Bar
+                Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(12),
+                  color: cs.surface,
+                  child: TextField(
+                    controller: _searchController,
+                    onSubmitted: (_) => _searchPlace(),
+                    textInputAction: TextInputAction.search,
+                    maxLines: 1,
+                    textAlignVertical: TextAlignVertical.center,
+                    decoration: InputDecoration(
+                      hintText: 'Search places…',
+                      prefixIcon: Icon(Icons.search, color: cs.onSurfaceVariant),
+                      suffixIcon: IconButton(
+                        icon: _isSearching
+                            ? SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation(cs.primary),
                                 ),
+                              )
+                            : Icon(Icons.arrow_forward, color: cs.primary),
+                        onPressed: _isSearching ? null : _searchPlace,
+                      ),
+                      filled: true,
+                      fillColor: cs.surfaceContainerHighest,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: cs.outlineVariant),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: cs.primary, width: 1.5),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Place name chip
+                Align(
+                  alignment: Alignment.center,
+                  child: Container(
+                    constraints: BoxConstraints(
+                      // Keep chip from growing too wide; leave margins
+                      maxWidth: MediaQuery.of(context).size.width - 64,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: cs.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: cs.outlineVariant),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.location_on, color: cs.primary, size: 18),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            _isLoadingAddress
+                                ? 'Finding place…'
+                                : (_locationName.isEmpty ? 'Tap on map to select' : _locationName),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Lat: ${_selectedLocation.latitude.toStringAsFixed(4)}, '
-                      'Lng: ${_selectedLocation.longitude.toStringAsFixed(4)}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
 
-          // Bottom radius slider card
+          // Bottom horizontal radius bar with left km pill
           Positioned(
+            left: 12,
+            right: 72, // leave space for zoom controls
             bottom: 16,
-            left: 16,
-            right: 16,
-            child: Card(
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Search Radius',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: cs.primaryContainer,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${_radiusKm.toStringAsFixed(1)} km',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: cs.onPrimaryContainer,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: cs.primary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${_radiusKm.toStringAsFixed(1)} km',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: cs.onPrimary,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 8),
-                    Slider(
-                      min: 1,
-                      max: 50,
-                      divisions: 49,
-                      value: _radiusKm.clamp(1, 50),
-                      onChanged: (v) {
-                        setState(() {
-                          _radiusKm = v;
-                          _updateMarkerAndCircle();
-                        });
-                      },
-                    ),
-                    Text(
-                      'Drag slider to adjust search radius',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: cs.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Material(
+                    elevation: 2,
+                    color: cs.surface,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Slider(
+                        min: 1,
+                        max: 50,
+                        divisions: 49,
+                        value: _radiusKm.clamp(1, 50).toDouble(),
+                        onChanged: (v) {
+                          setState(() {
+                            _radiusKm = v;
+                            _updateMarkerAndCircle();
+                          });
+                        },
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
-        ],
-      ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            heroTag: 'streetView',
-            onPressed: _openStreetView,
-            child: const Icon(Icons.streetview),
-          ),
-          const SizedBox(height: 16),
-          FloatingActionButton(
-            heroTag: 'myLocation',
-            onPressed: _isLoadingLocation ? null : _getCurrentLocation,
-            child: _isLoadingLocation
-                ? CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(cs.onPrimary),
-                  )
-                : const Icon(Icons.my_location),
+
+          // Bottom-right action buttons stacked above zoom controls
+          Positioned(
+            right: 12,
+            bottom: 120, // keep just above zoom controls and bottom slider
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Material(
+                  color: cs.primary,
+                  shape: const CircleBorder(),
+                  elevation: 3,
+                  child: IconButton(
+                    icon: Icon(Icons.streetview, color: cs.onPrimary),
+                    onPressed: _openStreetView,
+                    tooltip: 'Street View',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Material(
+                  color: cs.primary,
+                  shape: const CircleBorder(),
+                  elevation: 3,
+                  child: IconButton(
+                    icon: _isLoadingLocation
+                        ? SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(cs.onPrimary),
+                            ),
+                          )
+                        : Icon(Icons.my_location, color: cs.onPrimary),
+                    onPressed: _isLoadingLocation ? null : _getCurrentLocation,
+                    tooltip: 'Current location',
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -324,24 +400,30 @@ class _SearchMapPickerScreenState extends State<SearchMapPickerScreen> {
   Future<void> _openStreetView() async {
     final lat = _selectedLocation.latitude;
     final lng = _selectedLocation.longitude;
-    final uri = Uri.parse('google.streetview:cbll=$lat,$lng');
-    
+  final streetViewAppUri = Uri.parse('google.streetview:cbll=$lat,$lng');
+  final mapsPanoWebUri = Uri.parse(
+    'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=$lat,$lng');
+  final mapsPlaceWebUri = Uri.parse(
+    'https://maps.google.com/?q=&layer=c&cbll=$lat,$lng');
+
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      // Try Street View App deep link first
+      if (await canLaunchUrl(streetViewAppUri)) {
+        await launchUrl(streetViewAppUri, mode: LaunchMode.externalApplication);
       } else {
-        // Fallback to web browser
-        final webUri = Uri.parse(
-          'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=$lat,$lng',
-        );
-        if (await canLaunchUrl(webUri)) {
-          await launchUrl(webUri, mode: LaunchMode.externalApplication);
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Could not launch Street View')),
-            );
-          }
+        // Try web pano URL
+        if (await canLaunchUrl(mapsPanoWebUri)) {
+          await launchUrl(mapsPanoWebUri, mode: LaunchMode.externalApplication);
+        }
+        // As a last resort, open maps with Street View layer
+        else if (await canLaunchUrl(mapsPlaceWebUri)) {
+          await launchUrl(mapsPlaceWebUri, mode: LaunchMode.externalApplication);
+        }
+        // If nothing can be launched, show a message
+        else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not launch Street View')),
+          );
         }
       }
     } catch (e) {
@@ -351,5 +433,19 @@ class _SearchMapPickerScreenState extends State<SearchMapPickerScreen> {
         );
       }
     }
+  }
+
+  void _confirmSelection() {
+    Navigator.pop(context, {
+      'lat': _selectedLocation.latitude,
+      'lng': _selectedLocation.longitude,
+      'radius': _radiusKm,
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 }

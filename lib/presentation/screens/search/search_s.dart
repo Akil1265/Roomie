@@ -92,7 +92,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         await _loadHistory();
                       },
                       decoration: InputDecoration(
-                        hintText: '',
+                        hintText: 'Search here',
                         prefixIcon: Icon(
                           Icons.search,
                           color: cs.onSurfaceVariant,
@@ -105,25 +105,27 @@ class _SearchScreenState extends State<SearchScreen> {
                         focusedBorder: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
-                          vertical: 12,
+                          vertical: 10,
                         ),
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 16),
-                // Only one filter button on the right
-                InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: _openFilters,
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: cs.outlineVariant),
-                    ),
-                    child: Icon(Icons.tune, color: cs.onSurfaceVariant),
+                // Messages-style Filter button: filled pill with primary color
+                ElevatedButton.icon(
+                  onPressed: _openFilters,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: cs.primary,
+                    foregroundColor: cs.onPrimary,
+                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                  ),
+                  icon: const Icon(Icons.tune, size: 20),
+                  label: Text(
+                    'Filters',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -178,13 +180,42 @@ class _SearchScreenState extends State<SearchScreen> {
           Expanded(
             child: Builder(
               builder: (_) {
+                final filters = _controller.filters;
+                final hasQuery = _searchCtrl.text.trim().isNotEmpty;
+                final hasActiveFilters = (filters.minRent != null) ||
+                    (filters.maxRent != null) ||
+                    ((filters.roomType?.isNotEmpty ?? false)) ||
+                    (filters.hasGeo);
+
+                // Until user searches or applies a filter, show a friendly empty state
+                if (!hasQuery && !hasActiveFilters) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.search, size: 40, color: cs.onSurfaceVariant),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Find rooms',
+                          style: theme.textTheme.titleMedium?.copyWith(color: cs.onSurface),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Search by room name, location, or rent',
+                          style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
                 if (_controller.loading) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
                 if (_controller.results.isEmpty) {
                   return Center(
-                    child: Text('No results', style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                    child: Text('No rooms found', style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
                   );
                 }
 
@@ -429,12 +460,21 @@ class _SearchScreenState extends State<SearchScreen> {
     if (result != null && result['lat'] != null && result['lng'] != null) {
       final selectedRadius = result['radius'] ?? radiusKm;
       _controller.setGeo(result['lat']!, result['lng']!, selectedRadius);
+      
+      // Force full widget rebuild to show updated location
+      setState(() {});
       setModalState(() {}); // Update modal state
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Location selected on map!')),
+          SnackBar(
+            content: Text('Location set! Radius: ${selectedRadius.toStringAsFixed(1)} km'),
+            duration: const Duration(seconds: 2),
+          ),
         );
       }
+    } else {
+      // User cancelled selection; do nothing (keep existing filters)
     }
   }
 }

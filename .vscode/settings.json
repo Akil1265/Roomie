@@ -8,5 +8,23 @@
             "default": true
         }
     ],
-    "java.jdt.ls.java.home": "C:\\Program Files\\Microsoft\\jdk-17.0.16.8-hotspot"
+    "java.jdt.ls.java.home": "C:\\Program Files\\Microsoft\\jdk-17.0.16.8-hotspot",
+    // Prevent the Java extension from trying to import/resolve Gradle in this Flutter project
+    "java.import.gradle.enabled": false,
+    "java.import.gradle.wrapper.enabled": false,
+    // Also disable Gradle auto-detection from the Gradle extension
+    "gradle.autoDetect": "off",
+    // Disable Java project auto-import in this Flutter workspace
+    "java.project.importOnFirstTimeStartup": "disabled",
+    // Keep Java from importing/scanning Android/Gradle folders in this repo
+    "java.import.exclusions": [
+        "**/android/**",
+        "**/.gradle/**",
+        "**/build/**"
+    ],
+    // Completely disable Java language server for this Flutter workspace
+    "java.enabled": false,
+    "java.jdt.ls.enabled": false,
+    // Keep Dart/Flutter niceties
+    "dart.flutterHotReloadOnSave": "all"
 }

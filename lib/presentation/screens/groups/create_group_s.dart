@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:roomie/presentation/screens/location/map_picker_s.dart';
 import 'package:roomie/data/datasources/enhanced_geocoding_service.dart';
@@ -97,12 +96,8 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
   String _selectedCurrency = 'INR';
   int _selectedCapacity = 4;
   final List<String> _selectedAmenities = [];
-  // ignore: unused_field
   double? _latitude;
-  // ignore: unused_field
   double? _longitude;
-  // ignore: unused_field
-  bool _isLoadingLocation = false;
 
   final List<String> _roomTypes = ['1BHK', '2BHK', '3BHK', 'Shared', 'PG'];
   final List<String> _currencies = ['INR', 'USD', 'EUR'];
@@ -447,72 +442,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     );
   }
 
-  // Get current position
-  Future<Position?> _getCurrentPosition() async {
-    try {
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Location permissions are denied')),
-            );
-          }
-          return null;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location permissions are permanently denied'),
-            ),
-          );
-        }
-        return null;
-      }
-
-      return await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
-        ),
-      );
-    } catch (e) {
-      print('Error getting position: $e');
-      return null;
-    }
-  }
-
-  // Current location method
-  // ignore: unused_element
-  Future<void> _getCurrentLocation() async {
-    setState(() {
-      _isLoadingLocation = true;
-    });
-
-    try {
-      final position = await _getCurrentPosition();
-      if (position != null) {
-        await _updateAddressFromCoordinates(
-          position.latitude,
-          position.longitude,
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to get current location: $e')),
-        );
-      }
-    } finally {
-      setState(() {
-        _isLoadingLocation = false;
-      });
-    }
-  }
+  
 
   Future<void> _updateAddressFromCoordinates(double lat, double lng) async {
     try {
@@ -671,6 +601,8 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
         name: _groupNameController.text.trim(),
         description: _descriptionController.text.trim(),
         location: combinedLocation.isNotEmpty ? combinedLocation : streetText,
+        lat: _latitude,
+        lng: _longitude,
         memberCount: 1,
         maxMembers: _selectedCapacity,
         rentAmount: rentAmount,

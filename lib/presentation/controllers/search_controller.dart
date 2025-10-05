@@ -96,10 +96,11 @@ class GroupsSearchController extends ChangeNotifier {
         final gLat = (g['lat'] is num) ? (g['lat'] as num).toDouble() : null;
         final gLng = (g['lng'] is num) ? (g['lng'] as num).toDouble() : null;
         if (gLat != null && gLng != null) {
+          // If room has coordinates, use Haversine distance
           final dKm = _haversineKm(_filters.lat!, _filters.lng!, gLat, gLng);
           geoOk = dKm <= (_filters.radiusKm ?? 5.0);
         } else {
-          // If group lacks coords, exclude when geo filter is active
+          // If a geo-filter is active, rooms without coordinates should not match.
           geoOk = false;
         }
       }
