@@ -9,15 +9,26 @@ class SearchFilters {
 
   const SearchFilters({this.minRent, this.maxRent, this.location, this.roomType, this.lat, this.lng, this.radiusKm});
 
-  SearchFilters copyWith({double? minRent, double? maxRent, String? location, String? roomType, double? lat, double? lng, double? radiusKm}) {
+  // Sentinel to differentiate between "not provided" and "explicit null"
+  static const Object _unset = Object();
+
+  SearchFilters copyWith({
+    Object? minRent = _unset,
+    Object? maxRent = _unset,
+    Object? location = _unset,
+    Object? roomType = _unset,
+    Object? lat = _unset,
+    Object? lng = _unset,
+    Object? radiusKm = _unset,
+  }) {
     return SearchFilters(
-      minRent: minRent ?? this.minRent,
-      maxRent: maxRent ?? this.maxRent,
-      location: location ?? this.location,
-      roomType: roomType ?? this.roomType,
-      lat: lat ?? this.lat,
-      lng: lng ?? this.lng,
-      radiusKm: radiusKm ?? this.radiusKm,
+      minRent: identical(minRent, _unset) ? this.minRent : minRent as double?,
+      maxRent: identical(maxRent, _unset) ? this.maxRent : maxRent as double?,
+      location: identical(location, _unset) ? this.location : location as String?,
+      roomType: identical(roomType, _unset) ? this.roomType : roomType as String?,
+      lat: identical(lat, _unset) ? this.lat : lat as double?,
+      lng: identical(lng, _unset) ? this.lng : lng as double?,
+      radiusKm: identical(radiusKm, _unset) ? this.radiusKm : radiusKm as double?,
     );
   }
 

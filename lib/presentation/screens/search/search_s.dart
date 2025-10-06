@@ -3,6 +3,8 @@ import 'package:roomie/data/models/search_filters.dart';
 import 'package:roomie/presentation/controllers/search_controller.dart' as sc;
 import 'package:roomie/presentation/screens/groups/available_group_detail_s.dart';
 import 'package:roomie/presentation/screens/search/search_map_picker_s.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:intl/intl.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -15,6 +17,30 @@ class _SearchScreenState extends State<SearchScreen> {
   late final sc.GroupsSearchController _controller;
   final TextEditingController _searchCtrl = TextEditingController();
   List<String> _history = const [];
+  String? _geoPlaceName; // Cached place name for selected geo filter
+  String _rentCurrency = 'INR';
+  bool _showCurrencyPicker = false;
+
+  String _currencySymbol(String currency) {
+    switch (currency.toUpperCase()) {
+      case 'INR':
+        return '₹';
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      case 'GBP':
+        return '£';
+      case 'AED':
+        return 'د.إ';
+      case 'AUD':
+        return 'A\$';
+      case 'SGD':
+        return 'S\$';
+      default:
+        return currency.toUpperCase();
+    }
+  }
 
   @override
   void initState() {
@@ -26,6 +52,31 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _onChanged() => setState(() {});
+
+  Future<String?> _resolvePlaceName(double lat, double lng) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(lat, lng);
+      if (placemarks.isNotEmpty) {
+        final p = placemarks.first;
+        // Prefer locality + administrative area, fall back gracefully
+        final parts = [
+          if ((p.locality ?? '').trim().isNotEmpty) p.locality!.trim(),
+          if ((p.administrativeArea ?? '').trim().isNotEmpty) p.administrativeArea!.trim(),
+          if ((p.country ?? '').trim().isNotEmpty) p.country!.trim(),
+        ];
+        if (parts.isNotEmpty) return parts.take(2).join(', ');
+        // fallback to street + subLocality if locality missing
+        final alt = [
+          if ((p.street ?? '').trim().isNotEmpty) p.street!.trim(),
+          if ((p.subLocality ?? '').trim().isNotEmpty) p.subLocality!.trim(),
+        ];
+        if (alt.isNotEmpty) return alt.join(', ');
+      }
+    } catch (_) {
+      // ignore geocoding errors silently
+    }
+    return null;
+  }
 
   Future<void> _loadHistory() async {
     final h = await _controller.getHistory();
@@ -240,8 +291,9 @@ class _SearchScreenState extends State<SearchScreen> {
     final cs = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
 
-    double? minRent = _controller.filters.minRent;
-    double? maxRent = _controller.filters.maxRent;
+  final numberFmt = NumberFormat.decimalPattern();
+  double? minRent = _controller.filters.minRent;
+  double? maxRent = _controller.filters.maxRent;
     double radiusKm = _controller.filters.radiusKm ?? 5.0;
     String? selectedRoomType = _controller.filters.roomType?.isNotEmpty == true
         ? _controller.filters.roomType
@@ -283,6 +335,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             currentRange = const RangeValues(0, 100000);
                           });
                           _controller.setFilters(const SearchFilters());
+                          setState(() => _geoPlaceName = null);
                         },
                         child: const Text('Reset'),
                       ),
@@ -290,8 +343,115 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Rent range (RangeSlider)
-                  Text('Rent range', style: theme.textTheme.labelLarge?.copyWith(color: cs.onSurface)),
+                  // LOCATION: Map button with inline place name and clear
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      onPressed: () async {
+                        await _pickLocationOnMap(setModalState, radiusKm);
+                      },
+                      child: Row(
+                        children: [
+                          Icon(Icons.map, color: cs.onPrimary),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _controller.filters.hasGeo
+                                  ? (_geoPlaceName ?? 'Location set • ${(_controller.filters.radiusKm ?? radiusKm).toStringAsFixed(1)} km')
+                                  : 'Select location & radius',
+                              style: theme.textTheme.labelLarge?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w600),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (_controller.filters.hasGeo)
+                            IconButton(
+                              tooltip: 'Clear location',
+                              icon: Icon(Icons.close, color: cs.onPrimary),
+                              onPressed: () {
+                                _controller.setFilters(_controller.filters.copyWith(
+                                  lat: null,
+                                  lng: null,
+                                  radiusKm: null,
+                                ));
+                                setState(() => _geoPlaceName = null);
+                                setModalState(() {});
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // RENT RANGE header with values on the right, above slider
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Rent range', style: theme.textTheme.labelLarge?.copyWith(color: cs.onSurface)),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(6),
+                        onTap: () {
+                          setModalState(() => _showCurrencyPicker = !_showCurrencyPicker);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '${_currencySymbol(_rentCurrency)}${numberFmt.format(currentRange.start.round())} - ${_currencySymbol(_rentCurrency)}${numberFmt.format(currentRange.end.round())}',
+                                style: theme.textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                _showCurrencyPicker ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                size: 18,
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    child: _showCurrencyPicker
+                        ? Padding(
+                            padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                for (final c in const ['INR', 'USD', 'EUR', 'GBP', 'AED', 'AUD', 'SGD'])
+                                  ChoiceChip(
+                                    label: Text(
+                                      c,
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    selected: _rentCurrency == c,
+                                    shape: const StadiumBorder(),
+                                    side: BorderSide(color: cs.outlineVariant),
+                                    onSelected: (_) {
+                                      setState(() => _rentCurrency = c);
+                                      setModalState(() {
+                                        _rentCurrency = c;
+                                        _showCurrencyPicker = false;
+                                      });
+                                    },
+                                  ),
+                              ],
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
                   RangeSlider(
                     min: sliderMin,
                     max: sliderMax,
@@ -316,15 +476,18 @@ class _SearchScreenState extends State<SearchScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Room types chips
+                  // ROOM TYPE: theme-like pills, keep animations/colors
                   Text('Room type', style: theme.textTheme.labelLarge?.copyWith(color: cs.onSurface)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
+                    runSpacing: 8,
                     children: [
                       ChoiceChip(
-                        label: const Text('None'),
+                        label: Text('None', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
                         selected: selectedRoomType == null || selectedRoomType!.isEmpty,
+                        shape: const StadiumBorder(),
+                        side: BorderSide(color: cs.outlineVariant),
                         onSelected: (sel) {
                           setModalState(() => selectedRoomType = null);
                           _controller.setFilters(_controller.filters.copyWith(roomType: ''));
@@ -332,107 +495,16 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                       for (final rt in roomTypes)
                         ChoiceChip(
-                          label: Text(rt),
+                          label: Text(rt, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
                           selected: selectedRoomType == rt,
+                          shape: const StadiumBorder(),
+                          side: BorderSide(color: cs.outlineVariant),
                           onSelected: (sel) {
                             setModalState(() => selectedRoomType = sel ? rt : null);
                             _controller.setFilters(_controller.filters.copyWith(roomType: sel ? rt : ''));
                           },
                         ),
                     ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Location & Radius - Single button to open map
-                  Text('Location & Radius', style: theme.textTheme.labelLarge?.copyWith(color: cs.onSurface)),
-                  const SizedBox(height: 8),
-                  
-                  // Selected location display
-                  if (_controller.filters.hasGeo)
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: cs.primaryContainer.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: cs.primary.withValues(alpha: 0.5)),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.location_on, color: cs.primary, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Location set',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: cs.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Text(
-                                  'Radius: ${_controller.filters.radiusKm?.toStringAsFixed(1)} km',
-                                  style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                                ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.clear),
-                            color: cs.error,
-                            iconSize: 20,
-                            onPressed: () {
-                              _controller.setFilters(_controller.filters.copyWith(
-                                lat: null,
-                                lng: null,
-                                radiusKm: null,
-                              ));
-                              setModalState(() {});
-                            },
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: cs.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: cs.outlineVariant),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.location_off, color: cs.onSurfaceVariant, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'No location filter set',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: cs.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  
-                  const SizedBox(height: 12),
-                  
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.map),
-                      label: const Text('Select Location on Map'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      onPressed: () async {
-                        await _pickLocationOnMap(setModalState, radiusKm);
-                      },
-                    ),
                   ),
 
                   const SizedBox(height: 8),
@@ -460,6 +532,10 @@ class _SearchScreenState extends State<SearchScreen> {
     if (result != null && result['lat'] != null && result['lng'] != null) {
       final selectedRadius = result['radius'] ?? radiusKm;
       _controller.setGeo(result['lat']!, result['lng']!, selectedRadius);
+      // Resolve and cache a nice place label for the button
+      _resolvePlaceName(result['lat']!, result['lng']!).then((name) {
+        if (mounted) setState(() => _geoPlaceName = name);
+      });
       
       // Force full widget rebuild to show updated location
       setState(() {});
