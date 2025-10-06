@@ -153,8 +153,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildNotificationIconShell({int unreadCount = 0}) {
     final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
-      width: 40,
-      height: 40,
+      width: 36,
+      height: 36,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -436,7 +436,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16.0,
-                  vertical: 12.0,
+                  vertical: 6.0,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -457,11 +457,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         // Notifications button with badge
                         _buildNotificationButton(),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         // Profile button
                         Container(
-                          width: 40,
-                          height: 40,
+                          width: 36,
+                          height: 36,
                           decoration: BoxDecoration(
                             color: colorScheme.surface.withValues(alpha: 0),
                             borderRadius: BorderRadius.circular(8),
@@ -484,12 +484,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: EdgeInsets.zero,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         // Add button - Only show if user can create (no current group)
                         if (_canUserCreateGroup)
                           Container(
-                            width: 40,
-                            height: 40,
+                            width: 36,
+                            height: 36,
                             decoration: BoxDecoration(
                               color: colorScheme.surface.withValues(alpha: 0),
                               borderRadius: BorderRadius.circular(8),

@@ -147,14 +147,14 @@ class _MessagesPageState extends State<MessagesPage> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 // Filter tabs (right side)
                 Row(
                   children: [
                     _buildFilterTab('all', 'All'),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     _buildFilterTab('groups', 'Groups'),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     _buildFilterTab('individual', 'Direct'),
                   ],
                 ),
@@ -278,7 +278,7 @@ class _MessagesPageState extends State<MessagesPage> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
         decoration: BoxDecoration(
       color: isSelected
         ? colorScheme.primary

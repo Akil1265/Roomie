@@ -164,12 +164,14 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 const SizedBox(width: 16),
                 // Messages-style Filter button: filled pill with primary color
-                ElevatedButton.icon(
+                SizedBox(
+                  height: 44,
+                  child: ElevatedButton.icon(
                   onPressed: _openFilters,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: cs.primary,
                     foregroundColor: cs.onPrimary,
-                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                   ),
@@ -178,6 +180,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     'Filters',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w600),
                   ),
+                ),
                 ),
               ],
             ),
@@ -325,19 +328,37 @@ class _SearchScreenState extends State<SearchScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Filters', style: theme.textTheme.titleMedium?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w600)),
-                      TextButton(
-                        onPressed: () {
-                          setModalState(() {
-                            minRent = null;
-                            maxRent = null;
-                            selectedRoomType = null;
-                            radiusKm = 5.0;
-                            currentRange = const RangeValues(0, 100000);
-                          });
-                          _controller.setFilters(const SearchFilters());
-                          setState(() => _geoPlaceName = null);
-                        },
-                        child: const Text('Reset'),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              setModalState(() {
+                                minRent = null;
+                                maxRent = null;
+                                selectedRoomType = null;
+                                radiusKm = 5.0;
+                                currentRange = const RangeValues(0, 100000);
+                              });
+                              _controller.setFilters(const SearchFilters());
+                              setState(() => _geoPlaceName = null);
+                            },
+                            child: const Text('Reset'),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            ),
+                            onPressed: () {
+                              // Filters are already applied live; just close the sheet
+                              Navigator.of(context).pop();
+                            },
+                            child: Text('Done', style: theme.textTheme.labelLarge?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w600)),
+                          ),
+                        ],
                       ),
                     ],
                   ),
