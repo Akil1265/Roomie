@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:roomie/presentation/screens/chat/chat_screen.dart';
-import 'package:roomie/presentation/screens/chat/group_chat_s.dart';
 import 'package:roomie/data/datasources/messages_service.dart';
 import 'package:roomie/presentation/widgets/roomie_loading_widget.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -395,35 +394,24 @@ class _MessagesPageState extends State<MessagesPage> {
   void _openConversation(Map<String, dynamic> conversation) {
     final isGroup = conversation['type'] == 'group';
 
-    if (isGroup) {
-      // Navigate to group chat
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder:
-              (context) => GroupChatScreen(
-                group: conversation['groupData'] ?? conversation,
-              ),
+    final chatData = conversation['groupData'] ?? conversation;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(
+          chatData: {
+            ...chatData,
+            if (!isGroup)
+              'otherUserId': conversation['otherUserId'],
+            if (!isGroup)
+              'otherUserName': conversation['name'],
+            if (!isGroup)
+              'otherUserImageUrl': conversation['imageUrl'],
+          },
+          chatType: isGroup ? 'group' : 'individual',
         ),
-      );
-    } else {
-      // Navigate to individual chat
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder:
-              (context) => ChatScreen(
-                chatData: {
-                  'id': conversation['id'],
-                  'name': conversation['name'] ?? 'User',
-                  'imageUrl': conversation['imageUrl'],
-                  'otherUserId': conversation['otherUserId'],
-                  'userData': conversation['userData'] ?? {},
-                },
-                chatType: 'individual',
-              ),
-        ),
-      );
-    }
+      ),
+    );
   }
 }

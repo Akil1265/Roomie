@@ -5,7 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// Cloudinary folders used to organize uploads.
-enum CloudinaryFolder { profile, groups, other }
+enum CloudinaryFolder { profile, groups, chat, other }
+
+/// Cloudinary resource types supported by uploads
+enum CloudinaryResourceType { image, video, raw }
 
 /// Configuration holder for Cloudinary (no secret stored here!).
 class CloudinaryConfig {
@@ -20,9 +23,19 @@ class CloudinaryConfig {
     defaultValue: 'roomie_unsigned', // Create this preset in dashboard
   );
 
-  /// Base API endpoint.
+  /// Base API endpoint (image default).
   static String get uploadUrl =>
       'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
+
+  /// Build upload URL for a specific resource type
+  static String uploadUrlFor(CloudinaryResourceType type) {
+    final segment = switch (type) {
+      CloudinaryResourceType.image => 'image',
+      CloudinaryResourceType.video => 'video',
+      CloudinaryResourceType.raw => 'raw',
+    };
+    return 'https://api.cloudinary.com/v1_1/$cloudName/$segment/upload';
+  }
 }
 
 class CloudinaryService {
@@ -45,6 +58,7 @@ class CloudinaryService {
     CloudinaryFolder folder = CloudinaryFolder.other,
     String? publicId,
     Map<String, String>? context,
+    CloudinaryResourceType resourceType = CloudinaryResourceType.image,
   }) async {
     try {
       final bytes = await file.readAsBytes();
@@ -54,6 +68,7 @@ class CloudinaryService {
         folder: folder,
         publicId: publicId,
         context: context,
+        resourceType: resourceType,
       );
     } catch (e) {
       debugPrint('Cloudinary uploadFile error: $e');
@@ -68,13 +83,15 @@ class CloudinaryService {
     CloudinaryFolder folder = CloudinaryFolder.other,
     String? publicId,
     Map<String, String>? context,
+    CloudinaryResourceType resourceType = CloudinaryResourceType.image,
   }) async {
     try {
-      debugPrint('Cloudinary: Starting upload to ${CloudinaryConfig.uploadUrl}');
+      final url = CloudinaryConfig.uploadUrlFor(resourceType);
+      debugPrint('Cloudinary: Starting upload to $url');
       debugPrint('Cloudinary: Using cloud name: ${CloudinaryConfig.cloudName}');
       debugPrint('Cloudinary: Using upload preset: ${CloudinaryConfig.uploadPreset}');
       
-      final uri = Uri.parse(CloudinaryConfig.uploadUrl);
+      final uri = Uri.parse(url);
       final request = http.MultipartRequest('POST', uri)
         ..fields['upload_preset'] = CloudinaryConfig.uploadPreset;
 
@@ -124,6 +141,8 @@ class CloudinaryService {
         return 'roomie/profile';
       case CloudinaryFolder.groups:
         return 'roomie/groups';
+      case CloudinaryFolder.chat:
+        return 'roomie/chat';
       case CloudinaryFolder.other:
         return 'roomie/other';
     }
