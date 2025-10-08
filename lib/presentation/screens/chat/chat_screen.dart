@@ -1,25 +1,21 @@
-// ignore_for_file: unused_element
-
 import 'dart:async';
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
-// ignore: unused_import
-import 'package:just_audio/just_audio.dart';
-import 'package:record/record.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:roomie/data/datasources/auth_service.dart';
 import 'package:roomie/data/datasources/chat_service.dart';
-import 'package:roomie/data/models/message_model.dart';
-import 'package:roomie/presentation/widgets/roomie_loading_widget.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:uuid/uuid.dart';
 
-// Emoji picker removed per request
+import 'package:roomie/data/models/message_model.dart';
+import 'package:roomie/presentation/widgets/chat_input_widget.dart';
+import 'package:roomie/presentation/widgets/roomie_loading_widget.dart';
+import 'package:uuid/uuid.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({
@@ -35,16 +31,17 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final TextEditingController _messageController = TextEditingController();
   final FocusNode _messageFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
 
   final AuthService _authService = AuthService();
   final ChatService _chatService = ChatService();
+
+  final Uuid _uuid = const Uuid();
   final ImagePicker _imagePicker = ImagePicker();
   final AudioRecorder _voiceRecorder = AudioRecorder();
-  final Uuid _uuid = const Uuid();
 
   Stream<List<MessageModel>>? _messagesStream;
   bool _initialized = false;
@@ -55,11 +52,12 @@ class _ChatScreenState extends State<ChatScreen> {
   Map<String, String?> _memberImages = {};
   MessageModel? _editingMessage;
   bool _isUploading = false;
-  // Emoji picker removed
+  DateTime? _lastDeliverySync;
+  
+  // Voice recording state
   bool _isRecording = false;
   Duration _recordDuration = Duration.zero;
   Timer? _recordTimer;
-  DateTime? _lastDeliverySync;
   DateTime? _lastReadSync;
 
   @override
@@ -396,110 +394,25 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildComposer() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final hasText = _messageController.text.trim().isNotEmpty;
-
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_editingMessage != null) _buildEditingBanner(),
-            Row(
-              children: [
-                // Emoji button removed
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: TextField(
-                      controller: _messageController,
-                      focusNode: _messageFocusNode,
-                      minLines: 1,
-                      maxLines: 5,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintText: 'Message',
-                      ),
-                      onTap: () {
-                        // no-op
-                      },
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: _isUploading ? null : _showAttachmentSheet,
-                  icon: Icon(
-                    Icons.attach_file,
-                    color: _isUploading
-                        // ignore: deprecated_member_use
-                        ? colorScheme.onSurfaceVariant.withOpacity(0.4)
-                        : colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                if (hasText || _editingMessage != null)
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: colorScheme.primary,
-                    child: IconButton(
-                      icon: Icon(Icons.send, color: colorScheme.onPrimary),
-                      onPressed: _isUploading ? null : _handleSendPressed,
-                    ),
-                  )
-                else ...[
-                  if (_isRecording) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: Text(
-                        _formatRecordingDuration(_recordDuration),
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: colorScheme.onSurfaceVariant),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Cancel',
-                      onPressed: _isUploading
-                          ? null
-                          : () => _stopRecording(send: false),
-                      icon: Icon(Icons.delete_outline,
-                          color: colorScheme.onSurfaceVariant),
-                    ),
-                    const SizedBox(width: 6),
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: Colors.red,
-                      child: IconButton(
-                        tooltip: 'Send voice',
-                        icon: const Icon(Icons.stop, color: Colors.white),
-                        onPressed:
-                            _isUploading ? null : () => _stopRecording(send: true),
-                      ),
-                    ),
-                  ] else ...[
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: colorScheme.primary,
-                      child: IconButton(
-                        tooltip: 'Voice message',
-                        icon: Icon(Icons.mic, color: colorScheme.onPrimary),
-                        onPressed: _isUploading ? null : _startRecording,
-                      ),
-                    ),
-                  ],
-                ],
-              ],
-            ),
-          ],
+    return Column(
+      children: [
+        // Edit message banner
+        if (_editingMessage != null) _buildEditingBanner(),
+        
+        // Modern chat input widget
+        ChatInputWidget(
+          messageController: _messageController,
+          messageFocusNode: _messageFocusNode,
+          onSendPressed: _handleSendPressed,
+          onImageSelected: (file, fileName) => _handleImageUpload(file),
+          onFileSelected: (file, fileName) => _handleFileUpload(file),
+          onVoiceRecorded: (file, duration) => _handleVoiceUpload(file),
+          onPollPressed: () => _showPollDialog(),
+          onTodoPressed: () => _showTodoDialog(),
+          isUploading: _isUploading,
+          isGroup: _isGroup,
         ),
-      ),
+      ],
     );
   }
 
@@ -2186,11 +2099,208 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  // Modern chat widget handlers
+
+
+  Future<void> _sendPollMessage(PollData pollData) async {
+    if (!_initialized || _containerId == null) return;
+
+    final currentUser = _authService.currentUser;
+    if (currentUser == null) return;
+
+    try {
+
+
+      if (_isGroup) {
+        await _chatService.sendGroupMessage(
+          groupId: _containerId!,
+          message: 'Poll: ${pollData.question}',
+          type: MessageType.poll,
+          poll: pollData,
+        );
+      } else {
+        await _chatService.sendMessage(
+          chatId: _containerId!,
+          message: 'Poll: ${pollData.question}',
+          type: MessageType.poll,
+          poll: pollData,
+        );
+      }
+
+      _scrollToBottom();
+    } catch (e) {
+      debugPrint('Failed to send poll: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send poll: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendTodoMessage(TodoData todoData) async {
+    if (!_initialized || _containerId == null) return;
+
+    final currentUser = _authService.currentUser;
+    if (currentUser == null) return;
+
+    try {
+
+
+      if (_isGroup) {
+        await _chatService.sendGroupMessage(
+          groupId: _containerId!,
+          message: 'To-do: ${todoData.title}',
+          type: MessageType.todo,
+          todo: todoData,
+        );
+      } else {
+        await _chatService.sendMessage(
+          chatId: _containerId!,
+          message: 'To-do: ${todoData.title}',
+          type: MessageType.todo,
+          todo: todoData,
+        );
+      }
+
+      _scrollToBottom();
+    } catch (e) {
+      debugPrint('Failed to send to-do: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send to-do: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   String _resolveUserName(String userId, {String? fallback}) {
     if (_authService.currentUser?.uid == userId) {
       return 'You';
     }
     return _memberNames[userId] ?? fallback ?? 'Member';
+  }
+
+  Future<void> _handleImageUpload(File imageFile) async {
+    if (_containerId == null) return;
+
+    try {
+      setState(() => _isUploading = true);
+
+      final bytes = await imageFile.readAsBytes();
+      final fileName = 'image_${_uuid.v4()}.jpg';
+
+      final url = await _chatService.uploadChatFile(
+        bytes: bytes,
+        fileName: fileName,
+        contentType: 'image/jpeg',
+        folder: _isGroup ? 'groups/$_containerId/images' : 'chats/$_containerId/images',
+      );
+
+      final attachment = MessageAttachment(
+        url: url,
+        name: fileName,
+        type: AttachmentType.image,
+        mimeType: 'image/jpeg',
+        size: bytes.lengthInBytes,
+      );
+
+      await _sendRichMessage(
+        type: MessageType.image,
+        attachments: [attachment],
+      );
+    } catch (e) {
+      _showError('Failed to send image: $e');
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  Future<void> _handleFileUpload(File file) async {
+    if (_containerId == null) return;
+
+    try {
+      setState(() => _isUploading = true);
+
+      final bytes = await file.readAsBytes();
+      final fileName = p.basename(file.path);
+      final extension = p.extension(fileName).toLowerCase();
+      final contentType = _inferFileContentType(extension);
+
+      final url = await _chatService.uploadChatFile(
+        bytes: bytes,
+        fileName: fileName,
+        contentType: contentType,
+        folder: _isGroup ? 'groups/$_containerId/files' : 'chats/$_containerId/files',
+      );
+
+      final attachment = MessageAttachment(
+        url: url,
+        name: fileName,
+        type: AttachmentType.document,
+        mimeType: contentType,
+        size: bytes.lengthInBytes,
+      );
+
+      await _sendRichMessage(
+        type: MessageType.file,
+        attachments: [attachment],
+      );
+    } catch (e) {
+      _showError('Failed to send file: $e');
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  Future<void> _handleVoiceUpload(File audioFile) async {
+    if (_containerId == null) return;
+
+    try {
+      setState(() => _isUploading = true);
+
+      final bytes = await audioFile.readAsBytes();
+      final fileName = 'voice_${_uuid.v4()}.m4a';
+
+      final url = await _chatService.uploadChatFile(
+        bytes: bytes,
+        fileName: fileName,
+        contentType: 'audio/mp4',
+        folder: _isGroup ? 'groups/$_containerId/audio' : 'chats/$_containerId/audio',
+      );
+
+      final attachment = MessageAttachment(
+        url: url,
+        name: fileName,
+        type: AttachmentType.audio,
+        mimeType: 'audio/mp4',
+        size: bytes.lengthInBytes,
+      );
+
+      await _sendRichMessage(
+        type: MessageType.audio,
+        attachments: [attachment],
+      );
+    } catch (e) {
+      _showError('Failed to send voice message: $e');
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  void _showPollDialog() {
+    _showCreatePollSheet();
+  }
+
+  void _showTodoDialog() {
+    // Use the existing poll sheet for now - can be customized later
+    _showCreatePollSheet();
   }
 }
 
